@@ -69,7 +69,7 @@
             <button class="color-button" style="background: #008000;" data-color="#008000"></button>
             <button class="color-button" style="background: #808080;" data-color="#808080"></button>
         </div>
-        <input type="range" id="brushSize" min="20" max="60" value="30">
+        <input type="range" id="brushSize" min="10" max="50" value="20">
         <button id="clearCanvas">Löschen</button>
     </div>
 
@@ -101,7 +101,7 @@
 
         let drawing = false;
         let brushColor = "#FF0000";
-        let brushSize = 30;
+        let brushSize = 20;
         let selectedTool = "brush";
         let selectedEmoji = "😘";
 
@@ -128,6 +128,7 @@
 
         function startDrawing(e) {
             drawing = true;
+            ctx.beginPath(); // **Startet einen neuen Pfad, verhindert Linienverbindung**
             if (selectedTool === "emoji") {
                 drawEmoji(e);
             }
@@ -135,6 +136,7 @@
 
         function stopDrawing() {
             drawing = false;
+            ctx.beginPath(); // **Beendet den Pfad nach dem Loslassen**
         }
 
         function draw(e) {
@@ -174,18 +176,11 @@
 
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mouseout", stopDrawing);
         canvas.addEventListener("mousemove", draw);
 
         document.querySelectorAll(".emoji-button").forEach(button => {
             button.addEventListener("click", function() {
                 selectedEmoji = this.getAttribute("data-emoji");
-            });
-        });
-
-        document.querySelectorAll(".color-button").forEach(button => {
-            button.addEventListener("click", function() {
-                brushColor = this.getAttribute("data-color");
             });
         });
     </script>
