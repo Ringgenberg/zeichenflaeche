@@ -3,89 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeichenfläche mit Emojis</title>
+    <title>Zeichenfläche</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .canvas-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: white; 
+            border: 2px solid #000; 
+            margin: 10px auto; 
+            width: 95vw; 
+            max-width: 800px; 
+            height: 60vh; 
+            position: relative; 
         }
-        .canvas-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: white;
-            border: 2px solid #000;
-            margin: 10px auto;
-            width: 95vw;
-            max-width: 800px;
-            height: 60vh;
-            position: relative;
-        }
-        canvas {
-            width: 100%;
+        canvas { 
+            width: 100%; 
             height: 100%;
-            cursor: crosshair;
             touch-action: none;
+            background-color: white;
+            border: 1px solid black;
+            cursor: crosshair;
         }
-        .toolbar {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        input, button, select {
-            font-size: 1rem;
-            padding: 5px;
-            border-radius: 5px;
+        .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .color-button {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid #000;
             cursor: pointer;
         }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
+        .color-button.active {
+            border: 4px solid white;
+            box-shadow: 0 0 5px black;
         }
-        button:hover {
-            background: #0056b3;
-        }
-        #emojiDropdown {
-            font-size: 1.5rem;
-        }
+        input, button { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
+        button { background: #007bff; color: white; border: none; }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
-    <h1>Zeichenfläche mit Emojis</h1>
+    <h1>Zeichenfläche</h1>
+
     <div class="toolbar">
-        <input type="color" id="colorPicker" value="#000000">
-        <select id="tool">
-            <option value="brush">Pinsel</option>
-            <option value="eraser">Radierer</option>
-            <option value="emoji">Emoji</option>
-        </select>
-        <select id="emojiDropdown" style="display: none;">
-            <option value="😘">😘</option>
-            <option value="❤️">❤️</option>
-            <option value="😅">😅</option>
-            <option value="☺️">☺️</option>
-            <option value="😋">😋</option>
-            <option value="👍">👍</option>
-            <option value="🤣">🤣</option>
-            <option value="😍">😍</option>
-            <option value="😉">😉</option>
-            <option value="🍀">🍀</option>
-            <option value="🔥">🔥</option>
-            <option value="💦">💦</option>
-            <option value="😭">😭</option>
-            <option value="😵">😵</option>
-            <option value="😳">😳</option>
-            <option value="🐻">🐻</option>
-        </select>
+        <div id="colorPalette">
+            <button class="color-button" style="background: #FF0000;" data-color="#FF0000"></button>
+            <button class="color-button" style="background: #FFFF00;" data-color="#FFFF00"></button>
+            <button class="color-button" style="background: #0000FF;" data-color="#0000FF"></button>
+            <button class="color-button" style="background: #000000;" data-color="#000000"></button>
+            <button class="color-button" style="background: #00CED1;" data-color="#00CED1"></button>
+            <button class="color-button" style="background: #8B4513;" data-color="#8B4513"></button>
+            <button class="color-button" style="background: #FFA500;" data-color="#FFA500"></button>
+            <button class="color-button" style="background: #008000;" data-color="#008000"></button>
+            <button class="color-button" style="background: #808080;" data-color="#808080"></button>
+            <button class="color-button" style="background: #800080;" data-color="#800080"></button>
+            <button class="color-button" style="background: #FF69B4;" data-color="#FF69B4"></button>
+            <button class="color-button" style="background: #FFFFFF;" data-color="#FFFFFF"></button>
+        </div>
         <input type="range" id="brushSize" min="2" max="20" value="5">
-        <button id="clearCanvas">Leinwand löschen</button>
+        <button id="clearCanvas">Löschen</button>
     </div>
+
     <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
@@ -93,113 +71,89 @@
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-        const colorPicker = document.getElementById('colorPicker');
-        const toolSelector = document.getElementById('tool');
-        const emojiDropdown = document.getElementById('emojiDropdown');
-        const brushSize = document.getElementById('brushSize');
-        const clearButton = document.getElementById('clearCanvas');
 
-        // Canvas Größe anpassen
+        let drawing = false;
+        let brushColor = "#FF0000"; // Standardfarbe Rot
+        let brushSize = 5;
+
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
         }
-        window.addEventListener('resize', resizeCanvas);
+
+        window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
-        let isDrawing = false;
-        let lastX, lastY;
-        let brushColor = "#000000";
-        let brushWidth = 5;
-        let currentTool = "brush";
-        let selectedEmoji = "";
+        document.getElementById("brushSize").addEventListener("input", function() {
+            brushSize = this.value;
+        });
 
-        // Mausereignisse für Zeichnen
+        document.getElementById("clearCanvas").addEventListener("click", function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
         function startDrawing(e) {
-            if (currentTool === 'brush' || currentTool === 'eraser') {
-                isDrawing = true;
-                [lastX, lastY] = getMousePosition(e);
-            }
-        }
-
-        function draw(e) {
-            if (!isDrawing || currentTool !== 'brush' && currentTool !== 'eraser') return;
-
-            const { x, y } = getMousePosition(e);
-
+            drawing = true;
             ctx.beginPath();
-            ctx.lineWidth = brushWidth;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : brushColor;
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-
-            [lastX, lastY] = [x, y];
         }
 
         function stopDrawing() {
-            isDrawing = false;
+            drawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            const { x, y } = getMousePosition(e);
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = brushColor;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         }
 
         function getMousePosition(e) {
             const rect = canvas.getBoundingClientRect();
             return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
+                x: e.clientX ? e.clientX - rect.left : e.touches[0].clientX - rect.left,
+                y: e.clientY ? e.clientY - rect.top : e.touches[0].clientY - rect.top
             };
         }
 
-        // Touch-Ereignisse für mobile Geräte
-        canvas.addEventListener('touchstart', (e) => startDrawing(e.touches[0]));
-        canvas.addEventListener('touchmove', (e) => draw({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }));
-        canvas.addEventListener('touchend', stopDrawing);
+        // **Maus-Events**
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mouseout", stopDrawing);
+        canvas.addEventListener("mousemove", draw);
 
-        // Mausereignisse
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-
-        // Farbauswahl
-        colorPicker.addEventListener('input', (e) => {
-            brushColor = e.target.value;
+        // **Touch-Events für Smartphones**
+        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
+        canvas.addEventListener("touchend", stopDrawing);
+        canvas.addEventListener("touchcancel", stopDrawing);
+        canvas.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            draw(e.touches[0]);
         });
 
-        // Pinselgröße
-        brushSize.addEventListener('input', (e) => {
-            brushWidth = e.target.value;
+        // **Farbauswahl über Buttons**
+        document.querySelectorAll(".color-button").forEach(button => {
+            button.addEventListener("click", function() {
+                brushColor = this.getAttribute("data-color");
+
+                // Entferne die Markierung von allen Buttons
+                document.querySelectorAll(".color-button").forEach(btn => btn.classList.remove("active"));
+
+                // Markiere die ausgewählte Farbe
+                this.classList.add("active");
+            });
         });
 
-        // Werkzeugauswahl
-        toolSelector.addEventListener('change', (e) => {
-            currentTool = e.target.value;
-            if (currentTool === 'emoji') {
-                emojiDropdown.style.display = 'inline-block';
-            } else {
-                emojiDropdown.style.display = 'none';
-            }
-        });
-
-        // Emoji-Auswahl
-        emojiDropdown.addEventListener('change', (e) => {
-            selectedEmoji = e.target.value;
-        });
-
-        // Emoji auf die Leinwand zeichnen
-        canvas.addEventListener('click', (e) => {
-            if (currentTool !== 'emoji' || !selectedEmoji) return;
-
-            const { x, y } = getMousePosition(e);
-
-            ctx.font = `${brushWidth * 4}px Arial`;
-            ctx.fillStyle = brushColor;
-            ctx.fillText(selectedEmoji, x, y);
-        });
-
-        // Canvas leeren
-        clearButton.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
+        // Setze die erste Farbe als Standard aktiv
+        document.querySelector(".color-button").classList.add("active");
     </script>
 </body>
 </html>
