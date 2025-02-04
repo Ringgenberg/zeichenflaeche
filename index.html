@@ -111,12 +111,14 @@
             ctx.stroke();
 
             db.ref(`pages/page${currentPage}`).push({
+                type: "line",
                 x: x, y: y, color: brushColor, size: brushSize
             });
         }
 
         function addTextOrEmoji(e) {
-            if (document.getElementById("tool").value !== "text" && document.getElementById("tool").value !== "emoji") return;
+            const tool = document.getElementById("tool").value;
+            if (tool !== "text" && tool !== "emoji") return;
             const text = document.getElementById("textInput").value;
             if (!text) return;
 
@@ -129,6 +131,7 @@
             ctx.fillText(text, x, y);
 
             db.ref(`pages/page${currentPage}`).push({
+                type: "text",
                 x: x, y: y, text: text, color: brushColor, size: brushSize
             });
         }
@@ -138,7 +141,7 @@
             db.ref(`pages/page${currentPage}`).once("value", (snapshot) => {
                 snapshot.forEach((data) => {
                     const item = data.val();
-                    if (item.text) {
+                    if (item.type === "text") {
                         ctx.font = `${item.size * 4}px Arial`;
                         ctx.fillStyle = item.color;
                         ctx.fillText(item.text, item.x, item.y);
