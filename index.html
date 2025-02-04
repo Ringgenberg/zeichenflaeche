@@ -26,57 +26,29 @@
             border: 1px solid black;
             cursor: crosshair;
         }
-        .toolbar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            gap: 10px; 
-            margin-top: 10px; 
+        .toolbar, .emoji-toolbar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
-        .color-palette {
+        .color-palette, .emoji-toolbar {
             display: flex;
             gap: 5px;
         }
-        .color-button, .emoji-button {
+        .color-button, .emoji-button, .eraser-button, .bucket-button, .emoji-selector {
             width: 30px; height: 30px;
+            border: 2px solid #000;
+            cursor: pointer;
             border-radius: 50%;
-            border: 2px solid #000;
-            cursor: pointer;
-            background: white;
         }
-        .eraser-button {
-            width: 30px; height: 30px;
-            border: 2px dashed #000;
-            cursor: pointer;
-            background: transparent;
-        }
-        .bucket-button {
-            width: 30px; height: 30px;
-            border-radius: 5px;
-            border: 2px solid #000;
-            cursor: pointer;
-            background: #FFD700;
-        }
-        .emoji-selector {
-            width: 30px; height: 30px;
-            border-radius: 5px;
-            border: 2px solid #000;
-            cursor: pointer;
-            background: #fff;
-            line-height: 30px;
-            text-align: center;
-            font-size: 18px;
-        }
+        .eraser-button { border-style: dashed; background: transparent; }
+        .bucket-button { border-radius: 5px; background: #FFD700; }
+        .emoji-selector { border-radius: 5px; line-height: 30px; text-align: center; font-size: 18px; cursor: pointer; }
         button { background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
         button:hover { background: #0056b3; }
-        .emoji-toolbar {
-            display: flex; 
-            justify-content: center; 
-            gap: 10px; 
-            margin-top: 10px; 
-            flex-wrap: wrap;
-        }
         input[type="range"] { width: 100px; }
     </style>
 </head>
@@ -84,27 +56,22 @@
     <h1>Zeichenfläche</h1>
     <div class="toolbar">
         <div class="color-palette" id="colorPalette">
-            <button class="color-button" style="background: #FF0000;" data-color="#FF0000"></button>
-            <button class="color-button" style="background: #FFFF00;" data-color="#FFFF00"></button>
-            <button class="color-button" style="background: #0000FF;" data-color="#0000FF"></button>
-            <button class="color-button" style="background: #000000;" data-color="#000000"></button>
-            <button class="color-button" style="background: #00CED1;" data-color="#00CED1"></button>
-            <button class="color-button" style="background: #8B4513;" data-color="#8B4513"></button>
-            <button class="color-button" style="background: #FFA500;" data-color="#FFA500"></button>
-            <button class="color-button" style="background: #008000;" data-color="#008000"></button>
-            <button class="color-button" style="background: #808080;" data-color="#808080"></button>
+            <button class="color-button" style="background: red;" data-color="red"></button>
+            <button class="color-button" style="background: blue;" data-color="blue"></button>
+            <button class="color-button" style="background: green;" data-color="green"></button>
+            <button class="color-button" style="background: yellow;" data-color="yellow"></button>
+            <button class="color-button" style="background: purple;" data-color="purple"></button>
+            <button class="color-button" style="background: orange;" data-color="orange"></button>
+            <button class="color-button" style="background: black;" data-color="black"></button>
+            <button class="color-button" style="background: gray;" data-color="gray"></button>
         </div>
-        <div>
-            <input type="range" id="brushSize" min="10" max="50" value="20">
-            <button id="undo">←</button>
-            <button id="redo">→</button>
-            <button id="clearCanvas">🗑️</button>
-        </div>
-        <div>
-            <button class="bucket-button" id="fillBucket"></button>
-            <button class="eraser-button" id="eraserButton"></button>
-            <button class="emoji-selector" id="emojiSelector">😊</button>
-        </div>
+        <input type="range" id="brushSize" min="10" max="100" value="20">
+        <button id="undo">←</button>
+        <button id="redo">→</button>
+        <button id="clearCanvas">🗑️</button>
+        <button class="bucket-button" id="fillBucket"></button>
+        <button class="eraser-button" id="eraserButton"></button>
+        <button class="emoji-selector" id="emojiSelector">😊</button>
     </div>
     <div class="emoji-toolbar" id="emojiPalette" style="display: none;">
         <button class="emoji-button" data-emoji="😘">😘</button>
@@ -115,27 +82,18 @@
         <button class="emoji-button" data-emoji="🤣">🤣</button>
         <button class="emoji-button" data-emoji="😍">😍</button>
         <button class="emoji-button" data-emoji="😉">😉</button>
-        <button class="emoji-button" data-emoji="🍀">🍀</button>
-        <button class="emoji-button" data-emoji="🔥">🔥</button>
-        <button class="emoji-button" data-emoji="💦">💦</button>
-        <button class="emoji-button" data-emoji="😭">😭</button>
-        <button class="emoji-button" data-emoji="😵">😵</button>
-        <button class="emoji-button" data-emoji="😳">😳</button>
-        <button class="emoji-button" data-emoji="🐻">🐻</button>
     </div>
     <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
     <script>
-        const canvas = document.getElementById('drawingCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById("drawingCanvas");
+        const ctx = canvas.getContext("2d");
         let drawing = false;
-        let brushColor = "#FF0000";
+        let selectedColor = "black";
         let brushSize = 20;
-        let selectedTool = "brush";
-        let selectedEmoji = "😘";
-        let history = [];
-        let historyIndex = -1;
+        let selectedEmoji = "😊";
+        let isStamping = false;
 
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
@@ -144,144 +102,54 @@
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
+        document.querySelectorAll(".color-button").forEach(button => {
+            button.addEventListener("click", function() {
+                selectedColor = this.getAttribute("data-color");
+                isStamping = false;
+            });
+        });
+
         document.getElementById("brushSize").addEventListener("input", function() {
             brushSize = this.value;
         });
 
-        document.getElementById("clearCanvas").addEventListener("click", function() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            history = [];
-            historyIndex = -1;
-        });
-
-        document.getElementById("undo").addEventListener("click", () => {
-            if (historyIndex > 0) {
-                historyIndex--;
-                restoreState();
+        canvas.addEventListener("mousedown", (event) => {
+            if (isStamping) {
+                ctx.font = `${brushSize}px Arial`;
+                ctx.fillText(selectedEmoji, event.offsetX, event.offsetY);
+            } else {
+                drawing = true;
+                ctx.beginPath();
+                ctx.moveTo(event.offsetX, event.offsetY);
             }
         });
 
-        document.getElementById("redo").addEventListener("click", () => {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                restoreState();
-            }
+        canvas.addEventListener("mousemove", (event) => {
+            if (!drawing || isStamping) return;
+            ctx.strokeStyle = selectedColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = "round";
+            ctx.lineTo(event.offsetX, event.offsetY);
+            ctx.stroke();
         });
 
-        document.getElementById("fillBucket").addEventListener("click", () => {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            const targetColor = [data[0], data[1], data[2]];
-            fill(data, 0, 0, targetColor, brushColor);
-            ctx.putImageData(imageData, 0, 0);
-        });
-
-        function fill(data, x, y, targetColor, replacementColor) {
-            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
-            const index = (y * canvas.width + x) * 4;
-            if (
-                data[index] === targetColor[0] &&
-                data[index + 1] === targetColor[1] &&
-                data[index + 2] === targetColor[2]
-            ) {
-                data[index] = replacementColor.r;
-                data[index + 1] = replacementColor.g;
-                data[index + 2] = replacementColor.b;
-                fill(data, x - 1, y, targetColor, replacementColor);
-                fill(data, x + 1, y, targetColor, replacementColor);
-                fill(data, x, y - 1, targetColor, replacementColor);
-                fill(data, x, y + 1, targetColor, replacementColor);
-            }
-        }
-
-        document.querySelectorAll(".color-button").forEach(button => {
-            button.addEventListener("click", function() {
-                brushColor = this.getAttribute("data-color");
-                selectedTool = "brush";
-                document.getElementById("emojiPalette").style.display = "none";
-            });
-        });
-
-        document.getElementById("eraserButton").addEventListener("click", () => {
-            selectedTool = "eraser";
-            document.getElementById("emojiPalette").style.display = "none";
+        canvas.addEventListener("mouseup", () => {
+            drawing = false;
+            ctx.beginPath();
         });
 
         document.getElementById("emojiSelector").addEventListener("click", () => {
-            selectedTool = "emoji";
             document.getElementById("emojiPalette").style.display = "flex";
         });
 
         document.querySelectorAll(".emoji-button").forEach(button => {
             button.addEventListener("click", function() {
                 selectedEmoji = this.getAttribute("data-emoji");
+                document.getElementById("emojiSelector").textContent = selectedEmoji;
+                document.getElementById("emojiPalette").style.display = "none";
+                isStamping = true;
             });
         });
-
-        function startDrawing(e) {
-            drawing = true;
-            saveState();
-            if (selectedTool === "emoji") {
-                drawEmoji(e);
-            }
-        }
-
-        function stopDrawing() {
-            drawing = false;
-        }
-
-        function draw(e) {
-            if (!drawing) return;
-            const { x, y } = getMousePosition(e);
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = "round";
-            if (selectedTool === "brush") {
-                ctx.strokeStyle = brushColor;
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            } else if (selectedTool === "eraser") {
-                ctx.strokeStyle = "#FFFFFF";
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-
-        function drawEmoji(e) {
-            const { x, y } = getMousePosition(e);
-            ctx.font = `${brushSize}px Arial`;
-            ctx.fillText(selectedEmoji, x, y);
-        }
-
-        function getMousePosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.clientX ? e.clientX - rect.left : e.touches[0].clientX - rect.left,
-                y: e.clientY ? e.clientY - rect.top : e.touches[0].clientY - rect.top
-            };
-        }
-
-        function saveState() {
-            if (historyIndex < history.length - 1) {
-                history.splice(historyIndex + 1);
-            }
-            history.push(canvas.toDataURL());
-            historyIndex++;
-        }
-
-        function restoreState() {
-            const img = new Image();
-            img.src = history[historyIndex];
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-            };
-        }
-
-        canvas.addEventListener("mousedown", startDrawing);
-        canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mousemove", draw);
     </script>
 </body>
 </html>
