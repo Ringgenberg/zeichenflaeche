@@ -27,7 +27,7 @@
             <option value="text">Text</option>
             <option value="emoji">Emoji</option>
         </select>
-        <input type="text" id="textInput" placeholder="Text oder Emoji" style="display: none;">
+        <input type="text" id="textInput" placeholder="Text oder Emoji eingeben..." style="display: none;">
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Seite löschen</button>
         <button id="prevPage">◀ Zurück</button>
@@ -55,6 +55,7 @@
 
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
+        const textInput = document.getElementById("textInput");
 
         let drawing = false;
         let brushColor = "#000000";
@@ -82,7 +83,12 @@
 
         document.getElementById("tool").addEventListener("change", function() {
             isErasing = this.value === "eraser";
-            document.getElementById("textInput").style.display = (this.value === "text" || this.value === "emoji") ? "inline-block" : "none";
+            if (this.value === "text" || this.value === "emoji") {
+                textInput.style.display = "inline-block";
+                textInput.focus(); // 🔹 Öffnet die Smartphone-Tastatur!
+            } else {
+                textInput.style.display = "none";
+            }
         });
 
         document.getElementById("clearCanvas").addEventListener("click", function() {
@@ -119,7 +125,7 @@
         function addTextOrEmoji(e) {
             const tool = document.getElementById("tool").value;
             if (tool !== "text" && tool !== "emoji") return;
-            const text = document.getElementById("textInput").value;
+            const text = textInput.value.trim();
             if (!text) return;
 
             const rect = canvas.getBoundingClientRect();
@@ -134,6 +140,8 @@
                 type: "text",
                 x: x, y: y, text: text, color: brushColor, size: brushSize
             });
+
+            textInput.value = ""; // 🔹 Textfeld nach Eingabe leeren
         }
 
         function loadCanvas() {
@@ -156,22 +164,6 @@
                 });
             });
         }
-
-        document.getElementById("prevPage").addEventListener("click", function() {
-            if (currentPage > 1) {
-                currentPage--;
-                document.getElementById("pageIndicator").textContent = `Seite ${currentPage}/5`;
-                loadCanvas();
-            }
-        });
-
-        document.getElementById("nextPage").addEventListener("click", function() {
-            if (currentPage < totalPages) {
-                currentPage++;
-                document.getElementById("pageIndicator").textContent = `Seite ${currentPage}/5`;
-                loadCanvas();
-            }
-        });
 
         loadCanvas();
     </script>
