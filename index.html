@@ -110,7 +110,7 @@
 
             ctx.lineWidth = brushSize;
             ctx.lineCap = "round";
-            ctx.strokeStyle = brushColor;
+            ctx.strokeStyle = isErasing ? "#FFFFFF" : brushColor;
             ctx.beginPath();
             ctx.moveTo(x, y);
             ctx.lineTo(x, y);
