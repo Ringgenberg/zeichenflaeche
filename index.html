@@ -176,12 +176,7 @@
 
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mouseout", stopDrawing);
         canvas.addEventListener("mousemove", draw);
-        canvas.addEventListener("touchstart", startDrawing);
-        canvas.addEventListener("touchend", stopDrawing);
-        canvas.addEventListener("touchcancel", stopDrawing);
-        canvas.addEventListener("touchmove", draw);
         canvas.addEventListener("click", addTextOrEmoji);
 
         function loadCanvas() {
