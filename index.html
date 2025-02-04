@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Zeichenfläche</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
+        .canvas-container { display: inline-block; background: white; border: 2px solid #000; margin-top: 20px; }
+        canvas { cursor: crosshair; }
+        .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+        input[type="color"], button, select, input[type="range"] { font-size: 1rem; cursor: pointer; }
+        button { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Zeichenfläche</h1>
+    <div class="toolbar">
+        <input type="color" id="colorPicker" value="#000000">
+        <select id="tool"><option value="brush">Pinsel</option><option value="eraser">Radierer</option></select>
+        <input type="range" id="brushSize" min="2" max="20" value="5">
+        <button id="clearCanvas">Löschen</button>
+    </div>
+    <div class="canvas-container">
+        <canvas id="drawingCanvas" width="800" height="500"></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false, brushColor = "#000000", brushSize = 5, isErasing = false;
+
+        document.getElementById("colorPicker").oninput = e => (brushColor = e.target.value, isErasing = false);
+        document.getElementById("brushSize").oninput = e => brushSize = e.target.value;
+        document.getElementById("tool").onchange = e => isErasing = e.target.value === "eraser";
+        document.getElementById("clearCanvas").onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        canvas.onmousedown = () => (drawing = true);
+        canvas.onmouseup = canvas.onmouseout = () => (drawing = false);
+        canvas.onmousemove = e => {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = isErasing ? "#FFFFFF" : brushColor;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        };
+    </script>
+</body>
+</html>
