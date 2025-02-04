@@ -3,77 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Zeichenfläche</title>
+    <title>Gemeinsame Zeichenfläche</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        h1 {
-            margin-top: 10px;
-            font-size: 1.8rem;
-        }
-
-        .canvas-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: white;
-            border: 2px solid #000;
-            margin: 10px auto;
-            width: 95vw;
-            max-width: 800px;
-            height: 60vh;
-            position: relative;
-            touch-action: none;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        .toolbar {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        input, button, select {
-            font-size: 1rem;
-            padding: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-        }
-
-        button:hover {
-            background: #0056b3;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .canvas-container { display: flex; justify-content: center; align-items: center; background: white; border: 2px solid #000; margin: 10px auto; width: 95vw; max-width: 800px; height: 60vh; position: relative; }
+        canvas { width: 100%; height: 100%; }
+        .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        input, button, select { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
+        button { background: #007bff; color: white; border: none; }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
-    <h1>Zeichenfläche</h1>
+    <h1>Gemeinsame Zeichenfläche</h1>
 
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#000000">
         <select id="tool">
             <option value="brush">Pinsel</option>
             <option value="eraser">Radierer</option>
+            <option value="text">Text</option>
+            <option value="emoji">Emoji</option>
         </select>
+        <input type="text" id="textInput" placeholder="Text oder Emoji" style="display: none;">
         <input type="range" id="brushSize" min="2" max="20" value="5">
-        <button id="clearCanvas">Löschen</button>
+        <button id="clearCanvas">Seite löschen</button>
+        <button id="prevPage">◀ Zurück</button>
+        <span id="pageIndicator">Seite 1/5</span>
+        <button id="nextPage">Weiter ▶</button>
     </div>
 
     <div class="canvas-container">
@@ -81,21 +40,36 @@
     </div>
 
     <script>
+        // 🔹 Firebase-Setup
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXiT-uH9rwUn8ZKg0zBBgzvHtfmT2FXEM",
+            authDomain: "gemeinsame-zeichenflaeche.firebaseapp.com",
+            databaseURL: "https://gemeinsame-zeichenflaeche-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "gemeinsame-zeichenflaeche",
+            storageBucket: "gemeinsame-zeichenflaeche.firebasestorage.app",
+            messagingSenderId: "53297689529",
+            appId: "1:53297689529:web:f32f56cb02d19292b07c68"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-
-        // Responsive Canvas-Größe setzen
-        function resizeCanvas() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-        }
-        window.addEventListener("resize", resizeCanvas);
-        resizeCanvas();
 
         let drawing = false;
         let brushColor = "#000000";
         let brushSize = 5;
         let isErasing = false;
+        let currentPage = 1;
+        const totalPages = 5;
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            loadCanvas();
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
 
         document.getElementById("colorPicker").addEventListener("input", function() {
             brushColor = this.value;
@@ -108,47 +82,95 @@
 
         document.getElementById("tool").addEventListener("change", function() {
             isErasing = this.value === "eraser";
+            document.getElementById("textInput").style.display = (this.value === "text" || this.value === "emoji") ? "inline-block" : "none";
         });
 
         document.getElementById("clearCanvas").addEventListener("click", function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            db.ref(`pages/page${currentPage}`).remove();
         });
 
-        // Zeichnen für Desktop (Maus)
         canvas.addEventListener("mousedown", () => drawing = true);
         canvas.addEventListener("mouseup", () => drawing = false);
         canvas.addEventListener("mouseout", () => drawing = false);
         canvas.addEventListener("mousemove", draw);
-
-        // Zeichnen für Mobile (Touch)
-        canvas.addEventListener("touchstart", (e) => {
-            drawing = true;
-            e.preventDefault(); // Scrollen verhindern
-        });
-        canvas.addEventListener("touchend", () => drawing = false);
-        canvas.addEventListener("touchcancel", () => drawing = false);
-        canvas.addEventListener("touchmove", (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            draw({ clientX: touch.clientX, clientY: touch.clientY });
-        });
+        canvas.addEventListener("click", addTextOrEmoji);
 
         function draw(e) {
-            if (!drawing) return;
-
+            if (!drawing || isErasing) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
             ctx.lineWidth = brushSize;
             ctx.lineCap = "round";
-            ctx.strokeStyle = isErasing ? "#FFFFFF" : brushColor;
-
+            ctx.strokeStyle = brushColor;
             ctx.beginPath();
             ctx.moveTo(x, y);
             ctx.lineTo(x, y);
             ctx.stroke();
+
+            db.ref(`pages/page${currentPage}`).push({
+                x: x, y: y, color: brushColor, size: brushSize
+            });
         }
+
+        function addTextOrEmoji(e) {
+            if (document.getElementById("tool").value !== "text" && document.getElementById("tool").value !== "emoji") return;
+            const text = document.getElementById("textInput").value;
+            if (!text) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.font = `${brushSize * 4}px Arial`;
+            ctx.fillStyle = brushColor;
+            ctx.fillText(text, x, y);
+
+            db.ref(`pages/page${currentPage}`).push({
+                x: x, y: y, text: text, color: brushColor, size: brushSize
+            });
+        }
+
+        function loadCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            db.ref(`pages/page${currentPage}`).once("value", (snapshot) => {
+                snapshot.forEach((data) => {
+                    const item = data.val();
+                    if (item.text) {
+                        ctx.font = `${item.size * 4}px Arial`;
+                        ctx.fillStyle = item.color;
+                        ctx.fillText(item.text, item.x, item.y);
+                    } else {
+                        ctx.lineWidth = item.size;
+                        ctx.strokeStyle = item.color;
+                        ctx.beginPath();
+                        ctx.moveTo(item.x, item.y);
+                        ctx.lineTo(item.x, item.y);
+                        ctx.stroke();
+                    }
+                });
+            });
+        }
+
+        document.getElementById("prevPage").addEventListener("click", function() {
+            if (currentPage > 1) {
+                currentPage--;
+                document.getElementById("pageIndicator").textContent = `Seite ${currentPage}/5`;
+                loadCanvas();
+            }
+        });
+
+        document.getElementById("nextPage").addEventListener("click", function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                document.getElementById("pageIndicator").textContent = `Seite ${currentPage}/5`;
+                loadCanvas();
+            }
+        });
+
+        loadCanvas();
     </script>
 </body>
 </html>
