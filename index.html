@@ -30,28 +30,38 @@
         input, button { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
         button { background: #007bff; color: white; border: none; }
         button:hover { background: #0056b3; }
+        .emoji-picker { display: flex; gap: 10px; }
+        .emoji-picker span { font-size: 2rem; cursor: pointer; }
+        .emoji-picker span.selected { background-color: #ddd; border-radius: 5px; }
+        .draggable { position: absolute; user-select: none; cursor: move; }
     </style>
 </head>
 <body>
     <h1>Zeichenfläche</h1>
-
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#000000">
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Löschen</button>
+        <div class="emoji-picker">
+            <span data-emoji="😊" title="Lächeln">😊</span>
+            <span data-emoji="❤️" title="Herz">❤️</span>
+            <span data-emoji="⭐️" title="Stern">⭐️</span>
+        </div>
     </div>
-
-    <div class="canvas-container">
+    <div class="canvas-container" id="canvasContainer">
         <canvas id="drawingCanvas"></canvas>
     </div>
-
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-
         let drawing = false;
         let brushColor = "#000000";
         let brushSize = 5;
+        let selectedEmoji = null;
+        let draggedElement = null;
+
+        // Array für alle draggable Elemente
+        const draggableElements = [];
 
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
@@ -71,55 +81,97 @@
 
         document.getElementById("clearCanvas").addEventListener("click", function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Alle draggable Elemente entfernen
+            draggableElements.forEach(el => el.remove());
+            draggableElements.length = 0;
         });
 
+        // Emoji Auswahl
+        document.querySelectorAll('.emoji-picker span').forEach(span => {
+            span.addEventListener('click', () => {
+                if (selectedEmoji) {
+                    selectedEmoji.classList.remove('selected');
+                }
+                selectedEmoji = span;
+                selectedEmoji.classList.add('selected');
+            });
+        });
+
+        // Event Listener für das Platzieren von Emojis
+        canvas.addEventListener("click", (e) => {
+            if (!selectedEmoji) return;
+
+            const emoji = document.createElement('span');
+            emoji.textContent = selectedEmoji.getAttribute('data-emoji');
+            emoji.classList.add('draggable');
+            emoji.style.position = 'absolute';
+            emoji.style.left = `${e.offsetX}px`;
+            emoji.style.top = `${e.offsetY}px`;
+
+            // Emoji zur Liste hinzufügen
+            draggableElements.push(emoji);
+
+            // Emoji in den Canvas-Container einfügen
+            document.getElementById('canvasContainer').appendChild(emoji);
+
+            // Drag-and-Drop Funktionalität
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            emoji.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.offsetX;
+                offsetY = e.offsetY;
+                draggedElement = emoji;
+                emoji.style.zIndex = draggableElements.length; // Bring to front
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging || !draggedElement) return;
+                draggedElement.style.left = `${e.clientX - canvas.getBoundingClientRect().left - offsetX}px`;
+                draggedElement.style.top = `${e.clientY - canvas.getBoundingClientRect().top - offsetY}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                draggedElement = null;
+            });
+        });
+
+        // Zeichenfunktionen
         function startDrawing(e) {
             drawing = true;
-            ctx.beginPath();  // 🔹 Beginnt einen neuen Zeichenpfad
+            ctx.beginPath();
+            ctx.moveTo(getX(e), getY(e));
         }
 
         function stopDrawing() {
             drawing = false;
-            ctx.beginPath(); // 🔹 Beendet den aktuellen Zeichenpfad (Verhindert Linienverbindung)
         }
 
         function draw(e) {
             if (!drawing) return;
-            const { x, y } = getMousePosition(e);
             ctx.lineWidth = brushSize;
             ctx.lineCap = "round";
             ctx.strokeStyle = brushColor;
-
-            ctx.lineTo(x, y);
+            ctx.lineTo(getX(e), getY(e));
             ctx.stroke();
-
-            // 🔹 Beginnt sofort einen neuen Pfad, um Verbindung zu vermeiden
-            ctx.beginPath();
-            ctx.moveTo(x, y);
         }
 
-        function getMousePosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.clientX ? e.clientX - rect.left : e.touches[0].clientX - rect.left,
-                y: e.clientY ? e.clientY - rect.top : e.touches[0].clientY - rect.top
-            };
+        function getX(e) {
+            return e.clientX ? e.clientX - canvas.getBoundingClientRect().left : e.touches[0].clientX - canvas.getBoundingClientRect().left;
         }
 
-        // **Maus-Events**
+        function getY(e) {
+            return e.clientY ? e.clientY - canvas.getBoundingClientRect().top : e.touches[0].clientY - canvas.getBoundingClientRect().top;
+        }
+
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mouseout", stopDrawing);  // Falls der Mauszeiger das Canvas verlässt
         canvas.addEventListener("mousemove", draw);
-
-        // **Touch-Events für Smartphones**
-        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
+        canvas.addEventListener("touchstart", (e) => startDrawing(e));
         canvas.addEventListener("touchend", stopDrawing);
-        canvas.addEventListener("touchcancel", stopDrawing);
-        canvas.addEventListener("touchmove", (e) => {
-            e.preventDefault();  // 🔹 Verhindert Scrollen beim Zeichnen
-            draw(e.touches[0]);
-        });
+        canvas.addEventListener("touchmove", (e) => draw(e));
     </script>
 </body>
 </html>
