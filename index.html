@@ -27,44 +27,79 @@
             cursor: crosshair;
         }
         .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        select, input, button { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
+        input, button { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
         button { background: #007bff; color: white; border: none; }
         button:hover { background: #0056b3; }
+        .emoji-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .emoji-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            z-index: 1;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+        }
+        .emoji-dropdown-content span {
+            font-size: 2rem;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .emoji-dropdown-content span:hover {
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+        .emoji-dropdown:hover .emoji-dropdown-content {
+            display: block;
+        }
+        .draggable { position: absolute; user-select: none; cursor: move; }
     </style>
 </head>
 <body>
     <h1>Zeichenfläche</h1>
-
     <div class="toolbar">
-        <select id="colorPicker">
-            <option value="#FF0000">Rot</option>
-            <option value="#FFFF00">Gelb</option>
-            <option value="#0000FF">Blau</option>
-            <option value="#000000">Schwarz</option>
-            <option value="#00CED1">Türkis</option>
-            <option value="#8B4513">Braun</option>
-            <option value="#FFA500">Orange</option>
-            <option value="#008000">Grün</option>
-            <option value="#808080">Grau</option>
-            <option value="#800080">Lila</option>
-            <option value="#FF69B4">Pink</option>
-            <option value="#FFFFFF">Weiß</option>
-        </select>
+        <input type="color" id="colorPicker" value="#000000">
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Löschen</button>
+        <!-- Emoji Dropdown -->
+        <div class="emoji-dropdown">
+            <button>😊 Emojis</button>
+            <div class="emoji-dropdown-content">
+                <span data-emoji="😘">😘</span>
+                <span data-emoji="❤️">❤️</span>
+                <span data-emoji="😅">😅</span>
+                <span data-emoji="😋">😋</span>
+                <span data-emoji="👍">👍</span>
+                <span data-emoji="🤣">🤣</span>
+                <span data-emoji="😍">😍</span>
+                <span data-emoji="😉">😉</span>
+                <span data-emoji="🍀">🍀</span>
+                <span data-emoji="🔥">🔥</span>
+                <span data-emoji="💦">💦</span>
+                <span data-emoji="😭">😭</span>
+                <span data-emoji="😵">😵</span>
+                <span data-emoji="😳">😳</span>
+                <span data-emoji="🐻">🐻</span>
+            </div>
+        </div>
     </div>
-
-    <div class="canvas-container">
+    <div class="canvas-container" id="canvasContainer">
         <canvas id="drawingCanvas"></canvas>
     </div>
-
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-
         let drawing = false;
-        let brushColor = "#FF0000"; // Standardfarbe: Rot
+        let brushColor = "#000000";
         let brushSize = 5;
+        let selectedEmoji = null;
+        let draggedElement = null;
+
+        // Array für alle draggable Elemente
+        const draggableElements = [];
 
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
@@ -74,7 +109,7 @@
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
-        document.getElementById("colorPicker").addEventListener("change", function() {
+        document.getElementById("colorPicker").addEventListener("input", function() {
             brushColor = this.value;
         });
 
@@ -84,52 +119,96 @@
 
         document.getElementById("clearCanvas").addEventListener("click", function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Alle draggable Elemente entfernen
+            draggableElements.forEach(el => el.remove());
+            draggableElements.length = 0;
         });
 
+        // Emoji Auswahl
+        document.querySelectorAll('.emoji-dropdown-content span').forEach(span => {
+            span.addEventListener('click', () => {
+                selectedEmoji = span.getAttribute('data-emoji');
+            });
+        });
+
+        // Event Listener für das Platzieren von Emojis
+        canvas.addEventListener("click", (e) => {
+            if (!selectedEmoji) return;
+
+            const emoji = document.createElement('span');
+            emoji.textContent = selectedEmoji;
+            emoji.classList.add('draggable');
+            emoji.style.position = 'absolute';
+            emoji.style.left = `${e.offsetX}px`;
+            emoji.style.top = `${e.offsetY}px`;
+
+            // Emoji zur Liste hinzufügen
+            draggableElements.push(emoji);
+
+            // Emoji in den Canvas-Container einfügen
+            document.getElementById('canvasContainer').appendChild(emoji);
+
+            // Drag-and-Drop Funktionalität
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            emoji.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.offsetX;
+                offsetY = e.offsetY;
+                draggedElement = emoji;
+                emoji.style.zIndex = draggableElements.length; // Bring to front
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging || !draggedElement) return;
+                draggedElement.style.left = `${e.clientX - canvas.getBoundingClientRect().left - offsetX}px`;
+                draggedElement.style.top = `${e.clientY - canvas.getBoundingClientRect().top - offsetY}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                draggedElement = null;
+            });
+
+            // Reset selectedEmoji nach Platzierung
+            selectedEmoji = null;
+        });
+
+        // Zeichenfunktionen
         function startDrawing(e) {
             drawing = true;
             ctx.beginPath();
+            ctx.moveTo(getX(e), getY(e));
         }
 
         function stopDrawing() {
             drawing = false;
-            ctx.beginPath();
         }
 
         function draw(e) {
             if (!drawing) return;
-            const { x, y } = getMousePosition(e);
             ctx.lineWidth = brushSize;
             ctx.lineCap = "round";
             ctx.strokeStyle = brushColor;
-
-            ctx.lineTo(x, y);
+            ctx.lineTo(getX(e), getY(e));
             ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(x, y);
         }
 
-        function getMousePosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.clientX ? e.clientX - rect.left : e.touches[0].clientX - rect.left,
-                y: e.clientY ? e.clientY - rect.top : e.touches[0].clientY - rect.top
-            };
+        function getX(e) {
+            return e.clientX ? e.clientX - canvas.getBoundingClientRect().left : e.touches[0].clientX - canvas.getBoundingClientRect().left;
+        }
+
+        function getY(e) {
+            return e.clientY ? e.clientY - canvas.getBoundingClientRect().top : e.touches[0].clientY - canvas.getBoundingClientRect().top;
         }
 
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mouseout", stopDrawing);
         canvas.addEventListener("mousemove", draw);
-
-        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
+        canvas.addEventListener("touchstart", (e) => startDrawing(e));
         canvas.addEventListener("touchend", stopDrawing);
-        canvas.addEventListener("touchcancel", stopDrawing);
-        canvas.addEventListener("touchmove", (e) => {
-            e.preventDefault();
-            draw(e.touches[0]);
-        });
+        canvas.addEventListener("touchmove", (e) => draw(e));
     </script>
 </body>
 </html>
