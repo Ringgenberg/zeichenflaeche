@@ -34,56 +34,43 @@
 </head>
 <body>
     <h1>Zeichenfläche</h1>
-
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#000000">
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Löschen</button>
     </div>
-
     <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
-
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-
         let drawing = false;
         let brushColor = "#000000";
         let brushSize = 5;
-
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
         }
-
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
-
         document.getElementById("colorPicker").addEventListener("input", function() {
             brushColor = this.value;
         });
-
         document.getElementById("brushSize").addEventListener("input", function() {
             brushSize = this.value;
         });
-
         document.getElementById("clearCanvas").addEventListener("click", function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
-
         function startDrawing(e) {
             drawing = true;
-            ctx.beginPath();  // 🔹 Beginnt einen neuen Pfad (Verhindert Linien zwischen abgesetzten Strichen)
+            ctx.beginPath();
             ctx.moveTo(getX(e), getY(e));
         }
-
         function stopDrawing() {
             drawing = false;
-            ctx.beginPath(); // 🔹 Beendet den aktuellen Pfad, um Verbindungsstriche zu verhindern
         }
-
         function draw(e) {
             if (!drawing) return;
             ctx.lineWidth = brushSize;
@@ -91,22 +78,16 @@
             ctx.strokeStyle = brushColor;
             ctx.lineTo(getX(e), getY(e));
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(getX(e), getY(e));
         }
-
         function getX(e) {
             return e.clientX ? e.clientX - canvas.getBoundingClientRect().left : e.touches[0].clientX - canvas.getBoundingClientRect().left;
         }
-
         function getY(e) {
             return e.clientY ? e.clientY - canvas.getBoundingClientRect().top : e.touches[0].clientY - canvas.getBoundingClientRect().top;
         }
-
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
         canvas.addEventListener("mousemove", draw);
-
         canvas.addEventListener("touchstart", (e) => startDrawing(e));
         canvas.addEventListener("touchend", stopDrawing);
         canvas.addEventListener("touchmove", (e) => draw(e));
