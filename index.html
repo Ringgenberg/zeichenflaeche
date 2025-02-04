@@ -5,30 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zeichenfläche</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .canvas-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: white; 
-            border: 2px solid #000; 
-            margin: 10px auto; 
-            width: 95vw; 
-            max-width: 800px; 
-            height: 60vh; 
-            position: relative; 
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
         }
-        canvas { 
-            width: 100%; 
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border: 2px solid #000;
+            margin: 10px auto;
+            width: 95vw;
+            max-width: 800px;
+            height: 60vh;
+            position: relative;
+        }
+        canvas {
+            width: 100%;
             height: 100%;
             touch-action: none;
             background-color: white;
             border: 1px solid black;
             cursor: crosshair;
         }
-        .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
         .color-button {
-            width: 40px; height: 40px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             border: 2px solid #000;
             cursor: pointer;
@@ -37,21 +50,25 @@
             border: 4px solid white;
             box-shadow: 0 0 5px black;
         }
-        input, button, select { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
-        button { background: #007bff; color: white; border: none; }
-        button:hover { background: #0056b3; }
+        input, button {
+            font-size: 1rem;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
     <h1>Zeichenfläche</h1>
-
     <div class="toolbar">
-        <select id="tool">
-            <option value="brush">Pinsel</option>
-            <option value="eraser">Radierer</option>
-            <option value="emoji">Emoji</option>
-        </select>
-        <input type="text" id="emojiInput" placeholder="Emoji hier eingeben" style="display: none;">
         <div id="colorPalette">
             <button class="color-button" style="background: #FF0000;" data-color="#FF0000"></button>
             <button class="color-button" style="background: #FFFF00;" data-color="#FFFF00"></button>
@@ -62,88 +79,78 @@
             <button class="color-button" style="background: #FFA500;" data-color="#FFA500"></button>
             <button class="color-button" style="background: #008000;" data-color="#008000"></button>
             <button class="color-button" style="background: #808080;" data-color="#808080"></button>
+            <button class="color-button" style="background: #800080;" data-color="#800080"></button>
+            <button class="color-button" style="background: #FF69B4;" data-color="#FF69B4"></button>
+            <button class="color-button" style="background: #FFFFFF;" data-color="#FFFFFF"></button>
         </div>
-        <input type="range" id="brushSize" min="20" max="60" value="30">
+        <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Löschen</button>
     </div>
-
     <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
-
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-
         let drawing = false;
         let brushColor = "#FF0000"; // Standardfarbe Rot
-        let brushSize = 30;
-        let selectedTool = "brush";
-        let selectedEmoji = "😀";
+        let brushSize = 5;
+        let lastX, lastY;
 
+        // Canvas Größe anpassen
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
         }
-
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
-        document.getElementById("brushSize").addEventListener("input", function() {
+        // Pinselgröße ändern
+        document.getElementById("brushSize").addEventListener("input", function () {
             brushSize = this.value;
         });
 
-        document.getElementById("clearCanvas").addEventListener("click", function() {
+        // Leinwand löschen
+        document.getElementById("clearCanvas").addEventListener("click", function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
 
-        document.getElementById("tool").addEventListener("change", function() {
-            selectedTool = this.value;
-            document.getElementById("emojiInput").style.display = selectedTool === "emoji" ? "inline-block" : "none";
-        });
-
-        document.getElementById("emojiInput").addEventListener("input", function() {
-            selectedEmoji = this.value || "😀"; // Standard-Emoji falls Feld leer ist
-        });
-
+        // Zeichnen starten
         function startDrawing(e) {
             drawing = true;
-            if (selectedTool === "emoji") {
-                drawEmoji(e);
-            }
-        }
-
-        function stopDrawing() {
-            drawing = false;
-        }
-
-        function draw(e) {
-            if (!drawing || selectedTool === "emoji") return;
             const { x, y } = getMousePosition(e);
-
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = "round";
-
-            if (selectedTool === "brush") {
-                ctx.strokeStyle = brushColor;
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            } else if (selectedTool === "eraser") {
-                ctx.strokeStyle = "#FFFFFF";
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
-
+            lastX = x;
+            lastY = y;
             ctx.beginPath();
             ctx.moveTo(x, y);
         }
 
-        function drawEmoji(e) {
-            const { x, y } = getMousePosition(e);
-            ctx.font = `${brushSize}px Arial`;
-            ctx.fillText(selectedEmoji, x, y);
+        // Zeichnen beenden
+        function stopDrawing() {
+            drawing = false;
         }
 
+        // Zeichnen
+        function draw(e) {
+            if (!drawing) return;
+
+            const { x, y } = getMousePosition(e);
+
+            // Verhindere leere Zeichnungen, wenn sich die Position nicht geändert hat
+            if (x === lastX && y === lastY) return;
+
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = brushColor;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            lastX = x;
+            lastY = y;
+        }
+
+        // Mausposition ermitteln
         function getMousePosition(e) {
             const rect = canvas.getBoundingClientRect();
             return {
@@ -152,27 +159,38 @@
             };
         }
 
+        // Mausereignisse
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
         canvas.addEventListener("mouseout", stopDrawing);
         canvas.addEventListener("mousemove", draw);
 
-        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
+        // Touchereignisse
+        canvas.addEventListener("touchstart", (e) => {
+            e.preventDefault(); // Verhindert Scrollen
+            startDrawing(e.touches[0]);
+        });
         canvas.addEventListener("touchend", stopDrawing);
         canvas.addEventListener("touchcancel", stopDrawing);
         canvas.addEventListener("touchmove", (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Verhindert Scrollen
             draw(e.touches[0]);
         });
 
+        // Farbauswahl
         document.querySelectorAll(".color-button").forEach(button => {
-            button.addEventListener("click", function() {
+            button.addEventListener("click", function () {
                 brushColor = this.getAttribute("data-color");
+
+                // Entferne die Markierung von allen Buttons
                 document.querySelectorAll(".color-button").forEach(btn => btn.classList.remove("active"));
+
+                // Markiere die ausgewählte Farbe
                 this.classList.add("active");
             });
         });
 
+        // Setze die erste Farbe als Standard aktiv
         document.querySelector(".color-button").classList.add("active");
     </script>
 </body>
