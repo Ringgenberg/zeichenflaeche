@@ -27,79 +27,54 @@
             cursor: crosshair;
         }
         .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .color-button {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            cursor: pointer;
+        }
+        .color-button.active {
+            border: 4px solid white;
+            box-shadow: 0 0 5px black;
+        }
         input, button { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
         button { background: #007bff; color: white; border: none; }
         button:hover { background: #0056b3; }
-        .emoji-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        .emoji-dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            z-index: 1;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-        }
-        .emoji-dropdown-content span {
-            font-size: 2rem;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .emoji-dropdown-content span:hover {
-            background-color: #ddd;
-            border-radius: 5px;
-        }
-        .emoji-dropdown:hover .emoji-dropdown-content {
-            display: block;
-        }
-        .draggable { position: absolute; user-select: none; cursor: move; }
     </style>
 </head>
 <body>
     <h1>Zeichenfläche</h1>
+
     <div class="toolbar">
-        <input type="color" id="colorPicker" value="#000000">
+        <div id="colorPalette">
+            <button class="color-button" style="background: #FF0000;" data-color="#FF0000"></button>
+            <button class="color-button" style="background: #FFFF00;" data-color="#FFFF00"></button>
+            <button class="color-button" style="background: #0000FF;" data-color="#0000FF"></button>
+            <button class="color-button" style="background: #000000;" data-color="#000000"></button>
+            <button class="color-button" style="background: #00CED1;" data-color="#00CED1"></button>
+            <button class="color-button" style="background: #8B4513;" data-color="#8B4513"></button>
+            <button class="color-button" style="background: #FFA500;" data-color="#FFA500"></button>
+            <button class="color-button" style="background: #008000;" data-color="#008000"></button>
+            <button class="color-button" style="background: #808080;" data-color="#808080"></button>
+            <button class="color-button" style="background: #800080;" data-color="#800080"></button>
+            <button class="color-button" style="background: #FF69B4;" data-color="#FF69B4"></button>
+            <button class="color-button" style="background: #FFFFFF;" data-color="#FFFFFF"></button>
+        </div>
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Löschen</button>
-        <!-- Emoji Dropdown -->
-        <div class="emoji-dropdown">
-            <button>😊 Emojis</button>
-            <div class="emoji-dropdown-content">
-                <span data-emoji="😘">😘</span>
-                <span data-emoji="❤️">❤️</span>
-                <span data-emoji="😅">😅</span>
-                <span data-emoji="😋">😋</span>
-                <span data-emoji="👍">👍</span>
-                <span data-emoji="🤣">🤣</span>
-                <span data-emoji="😍">😍</span>
-                <span data-emoji="😉">😉</span>
-                <span data-emoji="🍀">🍀</span>
-                <span data-emoji="🔥">🔥</span>
-                <span data-emoji="💦">💦</span>
-                <span data-emoji="😭">😭</span>
-                <span data-emoji="😵">😵</span>
-                <span data-emoji="😳">😳</span>
-                <span data-emoji="🐻">🐻</span>
-            </div>
-        </div>
     </div>
-    <div class="canvas-container" id="canvasContainer">
+
+    <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
+
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-        let drawing = false;
-        let brushColor = "#000000";
-        let brushSize = 5;
-        let selectedEmoji = null;
-        let draggedElement = null;
 
-        // Array für alle draggable Elemente
-        const draggableElements = [];
+        let drawing = false;
+        let brushColor = "#FF0000"; // Standardfarbe Rot
+        let brushSize = 5;
 
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
@@ -109,106 +84,76 @@
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
-        document.getElementById("colorPicker").addEventListener("input", function() {
-            brushColor = this.value;
-        });
-
         document.getElementById("brushSize").addEventListener("input", function() {
             brushSize = this.value;
         });
 
         document.getElementById("clearCanvas").addEventListener("click", function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // Alle draggable Elemente entfernen
-            draggableElements.forEach(el => el.remove());
-            draggableElements.length = 0;
         });
 
-        // Emoji Auswahl
-        document.querySelectorAll('.emoji-dropdown-content span').forEach(span => {
-            span.addEventListener('click', () => {
-                selectedEmoji = span.getAttribute('data-emoji');
-            });
-        });
-
-        // Event Listener für das Platzieren von Emojis
-        canvas.addEventListener("click", (e) => {
-            if (!selectedEmoji) return;
-
-            const emoji = document.createElement('span');
-            emoji.textContent = selectedEmoji;
-            emoji.classList.add('draggable');
-            emoji.style.position = 'absolute';
-            emoji.style.left = `${e.offsetX}px`;
-            emoji.style.top = `${e.offsetY}px`;
-
-            // Emoji zur Liste hinzufügen
-            draggableElements.push(emoji);
-
-            // Emoji in den Canvas-Container einfügen
-            document.getElementById('canvasContainer').appendChild(emoji);
-
-            // Drag-and-Drop Funktionalität
-            let isDragging = false;
-            let offsetX, offsetY;
-
-            emoji.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                offsetX = e.offsetX;
-                offsetY = e.offsetY;
-                draggedElement = emoji;
-                emoji.style.zIndex = draggableElements.length; // Bring to front
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging || !draggedElement) return;
-                draggedElement.style.left = `${e.clientX - canvas.getBoundingClientRect().left - offsetX}px`;
-                draggedElement.style.top = `${e.clientY - canvas.getBoundingClientRect().top - offsetY}px`;
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-                draggedElement = null;
-            });
-
-            // Reset selectedEmoji nach Platzierung
-            selectedEmoji = null;
-        });
-
-        // Zeichenfunktionen
         function startDrawing(e) {
             drawing = true;
             ctx.beginPath();
-            ctx.moveTo(getX(e), getY(e));
         }
 
         function stopDrawing() {
             drawing = false;
+            ctx.beginPath();
         }
 
         function draw(e) {
             if (!drawing) return;
+            const { x, y } = getMousePosition(e);
             ctx.lineWidth = brushSize;
             ctx.lineCap = "round";
             ctx.strokeStyle = brushColor;
-            ctx.lineTo(getX(e), getY(e));
+
+            ctx.lineTo(x, y);
             ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         }
 
-        function getX(e) {
-            return e.clientX ? e.clientX - canvas.getBoundingClientRect().left : e.touches[0].clientX - canvas.getBoundingClientRect().left;
+        function getMousePosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX ? e.clientX - rect.left : e.touches[0].clientX - rect.left,
+                y: e.clientY ? e.clientY - rect.top : e.touches[0].clientY - rect.top
+            };
         }
 
-        function getY(e) {
-            return e.clientY ? e.clientY - canvas.getBoundingClientRect().top : e.touches[0].clientY - canvas.getBoundingClientRect().top;
-        }
-
+        // **Maus-Events**
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mouseout", stopDrawing);
         canvas.addEventListener("mousemove", draw);
-        canvas.addEventListener("touchstart", (e) => startDrawing(e));
+
+        // **Touch-Events für Smartphones**
+        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
         canvas.addEventListener("touchend", stopDrawing);
-        canvas.addEventListener("touchmove", (e) => draw(e));
+        canvas.addEventListener("touchcancel", stopDrawing);
+        canvas.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            draw(e.touches[0]);
+        });
+
+        // **Farbauswahl über Buttons**
+        document.querySelectorAll(".color-button").forEach(button => {
+            button.addEventListener("click", function() {
+                brushColor = this.getAttribute("data-color");
+
+                // Entferne die Markierung von allen Buttons
+                document.querySelectorAll(".color-button").forEach(btn => btn.classList.remove("active"));
+
+                // Markiere die ausgewählte Farbe
+                this.classList.add("active");
+            });
+        });
+
+        // Setze die erste Farbe als Standard aktiv
+        document.querySelector(".color-button").classList.add("active");
     </script>
 </body>
 </html>
