@@ -23,7 +23,7 @@
         canvas { 
             width: 100%; 
             height: 100%;
-            cursor: crosshair; /* 🔹 Fadenkreuz für genaues Malen */
+            cursor: crosshair !important; /* 🔹 Erzwingt das Fadenkreuz */
         }
         .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
         input, button, select { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
@@ -98,6 +98,7 @@
 
         document.getElementById("tool").addEventListener("change", function() {
             isErasing = this.value === "eraser";
+            canvas.style.cursor = "crosshair"; // 🔹 Fadenkreuz bleibt sichtbar
             if (this.value === "text" || this.value === "emoji") {
                 textInput.style.display = "inline-block";
                 textInput.focus(); 
