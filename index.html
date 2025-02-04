@@ -23,8 +23,10 @@
         canvas { 
             width: 100%; 
             height: 100%;
+            touch-action: none; /* 🔹 Verhindert Scrollen beim Zeichnen auf Mobile */
+            background-color: white;
+            border: 1px solid black;
             cursor: crosshair;
-            touch-action: none;
         }
         .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
         input, button, select { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
@@ -34,6 +36,7 @@
 </head>
 <body>
     <h1>Gemeinsame Zeichenfläche</h1>
+
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#000000">
         <select id="tool">
@@ -45,13 +48,12 @@
         <input type="text" id="textInput" placeholder="Text oder Emoji eingeben..." style="display: none;">
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Seite löschen</button>
-        <button id="prevPage">◀ Zurück</button>
-        <span id="pageIndicator">Seite 1/5</span>
-        <button id="nextPage">Weiter ▶</button>
     </div>
+
     <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
+
     <script>
         // 🔹 Firebase-Setup
         const firebaseConfig = {
@@ -63,25 +65,23 @@
             messagingSenderId: "53297689529",
             appId: "1:53297689529:web:f32f56cb02d19292b07c68"
         };
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
         const textInput = document.getElementById("textInput");
+
         let drawing = false;
         let brushColor = "#000000";
         let brushSize = 5;
         let isErasing = false;
-        let currentPage = 1;
-        const totalPages = 5;
 
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             loadCanvas();
         }
-
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
 
@@ -106,58 +106,40 @@
 
         document.getElementById("clearCanvas").addEventListener("click", function() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            db.ref(`pages/page${currentPage}`).remove();
+            db.ref("drawingData").remove();
         });
 
-        document.getElementById("prevPage").addEventListener("click", () => changePage(-1));
-        document.getElementById("nextPage").addEventListener("click", () => changePage(1));
-
-        function changePage(delta) {
-            const newPage = Math.max(1, Math.min(currentPage + delta, totalPages));
-            if (newPage !== currentPage) {
-                currentPage = newPage;
-                document.getElementById("pageIndicator").textContent = `Seite ${currentPage}/5`;
-                loadCanvas();
-            }
+        function getMousePosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.touches[0].clientX) - rect.left,
+                y: (e.clientY || e.touches[0].clientY) - rect.top
+            };
         }
-
-        let lastX, lastY;
 
         function startDrawing(e) {
             drawing = true;
             const { x, y } = getMousePosition(e);
-            lastX = x;
-            lastY = y;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         }
 
         function stopDrawing() {
             drawing = false;
+            ctx.beginPath();
         }
 
         function draw(e) {
             if (!drawing) return;
             const { x, y } = getMousePosition(e);
+
             ctx.lineWidth = brushSize;
             ctx.lineCap = "round";
             ctx.strokeStyle = isErasing ? "#FFFFFF" : brushColor;
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
             ctx.lineTo(x, y);
             ctx.stroke();
-            lastX = x;
-            lastY = y;
-            db.ref(`pages/page${currentPage}`).push({
-                type: "line",
-                x: x, y: y, color: brushColor, size: brushSize
-            });
-        }
-
-        function getMousePosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         }
 
         function addTextOrEmoji(e) {
@@ -165,45 +147,24 @@
             if (tool !== "text" && tool !== "emoji") return;
             const text = textInput.value.trim();
             if (!text) return;
+
             const { x, y } = getMousePosition(e);
+
             ctx.font = `${brushSize * 4}px Arial`;
             ctx.fillStyle = brushColor;
             ctx.fillText(text, x, y);
-            db.ref(`pages/page${currentPage}`).push({
-                type: "text",
-                x: x, y: y, text: text, color: brushColor, size: brushSize
-            });
-            textInput.value = ""; 
         }
 
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
         canvas.addEventListener("mousemove", draw);
-        canvas.addEventListener("click", addTextOrEmoji);
-
-        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
+        canvas.addEventListener("touchstart", startDrawing);
         canvas.addEventListener("touchend", stopDrawing);
-        canvas.addEventListener("touchmove", (e) => draw({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }));
+        canvas.addEventListener("touchmove", draw);
+        canvas.addEventListener("click", addTextOrEmoji);
 
         function loadCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            db.ref(`pages/page${currentPage}`).once("value").then(snapshot => {
-                snapshot.forEach(childSnapshot => {
-                    const data = childSnapshot.val();
-                    if (data.type === "line") {
-                        ctx.lineWidth = data.size;
-                        ctx.strokeStyle = data.color;
-                        ctx.beginPath();
-                        ctx.moveTo(data.x, data.y);
-                        ctx.lineTo(data.x, data.y);
-                        ctx.stroke();
-                    } else if (data.type === "text") {
-                        ctx.font = `${data.size * 4}px Arial`;
-                        ctx.fillStyle = data.color;
-                        ctx.fillText(data.text, data.x, data.y);
-                    }
-                });
-            });
         }
 
         loadCanvas();
