@@ -4,39 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gemeinsame Zeichenfläche</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .canvas-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: white; 
-            border: 2px solid #000; 
-            margin: 10px auto; 
-            width: 95vw; 
-            max-width: 800px; 
-            height: 60vh; 
-            position: relative; 
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
         }
-        canvas { 
-            width: 100%; 
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border: 2px solid #000;
+            margin: 10px auto;
+            width: 95vw;
+            max-width: 800px;
+            height: 60vh;
+            position: relative;
+        }
+        canvas {
+            width: 100%;
             height: 100%;
             cursor: crosshair;
             touch-action: none;
-            background-color: white;
-            border: 1px solid black;
         }
-        .toolbar { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        input, button, select { font-size: 1rem; padding: 5px; border-radius: 5px; cursor: pointer; }
-        button { background: #007bff; color: white; border: none; }
-        button:hover { background: #0056b3; }
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        input, button, select {
+            font-size: 1rem;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
     <h1>Gemeinsame Zeichenfläche</h1>
-
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#000000">
         <select id="tool">
@@ -49,139 +67,119 @@
         <input type="range" id="brushSize" min="2" max="20" value="5">
         <button id="clearCanvas">Seite löschen</button>
     </div>
-
     <div class="canvas-container">
         <canvas id="drawingCanvas"></canvas>
     </div>
 
     <script>
-        // 🔹 Firebase-Setup
-        const firebaseConfig = {
-            apiKey: "AIzaSyCXiT-uH9rwUn8ZKg0zBBgzvHtfmT2FXEM",
-            authDomain: "gemeinsame-zeichenflaeche.firebaseapp.com",
-            databaseURL: "https://gemeinsame-zeichenflaeche-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "gemeinsame-zeichenflaeche",
-            storageBucket: "gemeinsame-zeichenflaeche.firebasestorage.app",
-            messagingSenderId: "53297689529",
-            appId: "1:53297689529:web:f32f56cb02d19292b07c68"
-        };
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database(app);
-
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-        const textInput = document.getElementById("textInput");
-        let drawing = false;
-        let brushColor = "#000000";
-        let brushSize = 5;
-        let isErasing = false;
+        const colorPicker = document.getElementById('colorPicker');
+        const toolSelector = document.getElementById('tool');
+        const textInput = document.getElementById('textInput');
+        const brushSize = document.getElementById('brushSize');
+        const clearButton = document.getElementById('clearCanvas');
 
+        // Canvas Größe anpassen
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
-            loadCanvas();
         }
-
-        window.addEventListener("resize", resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        document.getElementById("colorPicker").addEventListener("input", function() {
-            brushColor = this.value;
-            isErasing = false;
-        });
-
-        document.getElementById("brushSize").addEventListener("input", function() {
-            brushSize = this.value;
-        });
-
-        document.getElementById("tool").addEventListener("change", function() {
-            isErasing = this.value === "eraser";
-            if (this.value === "text" || this.value === "emoji") {
-                textInput.style.display = "inline-block";
-                textInput.focus(); 
-            } else {
-                textInput.style.display = "none";
-            }
-        });
-
-        document.getElementById("clearCanvas").addEventListener("click", function() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            db.ref("drawingData").remove();
-        });
-
+        let isDrawing = false;
         let lastX, lastY;
+        let brushColor = "#000000";
+        let brushWidth = 5;
+        let currentTool = "brush";
 
+        // Mausereignisse für Zeichnen
         function startDrawing(e) {
-            drawing = true;
-            const { x, y } = getMousePosition(e);
-            lastX = x;
-            lastY = y;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-
-        function stopDrawing() {
-            drawing = false;
+            if (currentTool === 'brush' || currentTool === 'eraser') {
+                isDrawing = true;
+                [lastX, lastY] = getMousePosition(e);
+            }
         }
 
         function draw(e) {
-            if (!drawing) return;
+            if (!isDrawing || currentTool === 'text' || currentTool === 'emoji') return;
+
             const { x, y } = getMousePosition(e);
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = "round";
-            ctx.strokeStyle = isErasing ? "#FFFFFF" : brushColor;
+
+            ctx.beginPath();
+            ctx.lineWidth = brushWidth;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : brushColor;
+            ctx.moveTo(lastX, lastY);
             ctx.lineTo(x, y);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
 
-            db.ref("drawingData").push({
-                type: "line",
-                x: x, y: y, color: brushColor, size: brushSize
-            });
+            [lastX, lastY] = [x, y];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
         }
 
         function getMousePosition(e) {
             const rect = canvas.getBoundingClientRect();
             return {
-                x: (e.clientX || e.touches[0].clientX) - rect.left,
-                y: (e.clientY || e.touches[0].clientY) - rect.top
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
             };
         }
 
-        function addTextOrEmoji(e) {
-            const tool = document.getElementById("tool").value;
-            if (tool !== "text" && tool !== "emoji") return;
+        // Touch-Ereignisse für mobile Geräte
+        canvas.addEventListener('touchstart', (e) => startDrawing(e.touches[0]));
+        canvas.addEventListener('touchmove', (e) => draw({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }));
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Mausereignisse
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+
+        // Farbauswahl
+        colorPicker.addEventListener('input', (e) => {
+            brushColor = e.target.value;
+        });
+
+        // Pinselgröße
+        brushSize.addEventListener('input', (e) => {
+            brushWidth = e.target.value;
+        });
+
+        // Werkzeugauswahl
+        toolSelector.addEventListener('change', (e) => {
+            currentTool = e.target.value;
+            if (currentTool === 'text' || currentTool === 'emoji') {
+                textInput.style.display = 'inline-block';
+                textInput.focus();
+            } else {
+                textInput.style.display = 'none';
+            }
+        });
+
+        // Text oder Emoji hinzufügen
+        canvas.addEventListener('click', (e) => {
+            if (currentTool !== 'text' && currentTool !== 'emoji') return;
+
             const text = textInput.value.trim();
             if (!text) return;
 
             const { x, y } = getMousePosition(e);
-            ctx.font = `${brushSize * 4}px Arial`;
+            ctx.font = `${brushWidth * 4}px Arial`;
             ctx.fillStyle = brushColor;
             ctx.fillText(text, x, y);
 
-            db.ref("drawingData").push({
-                type: "text",
-                x: x, y: y, text: text, color: brushColor, size: brushSize
-            });
+            textInput.value = '';
+        });
 
-            textInput.value = ""; 
-        }
-
-        canvas.addEventListener("mousedown", startDrawing);
-        canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mousemove", draw);
-        canvas.addEventListener("click", addTextOrEmoji);
-
-        canvas.addEventListener("touchstart", (e) => startDrawing(e.touches[0]));
-        canvas.addEventListener("touchend", stopDrawing);
-        canvas.addEventListener("touchmove", (e) => draw({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }));
-
-        function loadCanvas() {
+        // Canvas leeren
+        clearButton.addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        loadCanvas();
+        });
     </script>
 </body>
 </html>
