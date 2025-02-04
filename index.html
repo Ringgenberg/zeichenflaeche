@@ -119,7 +119,7 @@
         canvas.addEventListener("click", addTextOrEmoji);
 
         function draw(e) {
-            if (!drawing || isErasing) return;
+            if (!drawing) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -129,7 +129,7 @@
             ctx.strokeStyle = isErasing ? "#FFFFFF" : brushColor;
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x, y);
+            ctx.lineTo(x + 1, y + 1);
             ctx.stroke();
 
             db.ref(`pages/page${currentPage}`).push({
@@ -174,7 +174,7 @@
                         ctx.strokeStyle = item.color;
                         ctx.beginPath();
                         ctx.moveTo(item.x, item.y);
-                        ctx.lineTo(item.x, item.y);
+                        ctx.lineTo(item.x + 1, item.y + 1);
                         ctx.stroke();
                     }
                 });
