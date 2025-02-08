@@ -51,16 +51,19 @@
       transform: translateX(-200%);
     }
     .toggle-button {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
       background: white;
       border: 2px solid #ccc;
       padding: 5px 10px;
       cursor: pointer;
       border-radius: 5px;
-      margin-left: -15px;
-      transition: transform 0.3s;
+      transition: left 0.3s;
     }
     .toggle-button.hidden {
-      transform: translateX(-190%);
+      left: 0;
     }
     .emoji-container {
       position: absolute;
@@ -176,6 +179,7 @@
       menu.classList.toggle("hidden");
       emojiContainer.classList.toggle("hidden");
       toggleButton.textContent = menu.classList.contains("hidden") ? "➡️" : "⬅️";
+      toggleButton.classList.toggle("hidden");
     });
 
     // Werkzeuge auswählen
@@ -208,14 +212,13 @@
     });
 
     function startDraw(e) {
-      if (selectedTool === "emoji") return;
       isDrawing = true;
       const pos = getMousePos(e);
       [lastX, lastY] = [pos.x, pos.y];
     }
 
     function draw(e) {
-      if (!isDrawing || selectedTool === "emoji") return;
+      if (!isDrawing) return;
       const pos = getMousePos(e);
       ctx.lineWidth = brushSize;
       ctx.lineCap = "round";
@@ -229,18 +232,9 @@
 
     function stopDraw() { isDrawing = false; }
 
-    canvas.addEventListener("mousedown", startDraw);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", stopDraw);
-    canvas.addEventListener("click", (e) => {
-      if (selectedTool === "emoji" && selectedEmoji) {
-        const pos = getMousePos(e);
-        ctx.font = `${brushSize * 2}px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(selectedEmoji, pos.x, pos.y);
-      }
-    });
+    canvas.addEventListener("pointerdown", startDraw);
+    canvas.addEventListener("pointermove", draw);
+    canvas.addEventListener("pointerup", stopDraw);
   </script>
 
 </body>
