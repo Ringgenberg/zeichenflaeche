@@ -535,6 +535,7 @@
           menu.style.display = 'none';
           menuOpen = false;
         }
+        console.log("Emoji ausgewählt:", selectedEmoji);
       });
     });
 
@@ -593,7 +594,10 @@
     drawingCanvas.addEventListener('click', (e) => {
       if (selectedTool === 'emoji' && selectedEmoji) {
         placeEmoji(e);
-        if ('ontouchstart' in window) { menu.style.display = 'none'; menuOpen = false; }
+        if ('ontouchstart' in window) { 
+          menu.style.display = 'none'; 
+          menuOpen = false; 
+        }
       } else if (selectedTool === 'text') {
         if (textConfirmed) {
           placeText(e);
@@ -610,10 +614,17 @@
     });
 
     // --- Touch-Events für Zeichnungs-Canvas ---
-    drawingCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
-    drawingCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    drawingCanvas.addEventListener('touchstart', (e) => { 
+      e.preventDefault(); 
+      startDraw(e); 
+    });
+    drawingCanvas.addEventListener('touchmove', (e) => { 
+      e.preventDefault(); 
+      draw(e); 
+    });
     drawingCanvas.addEventListener('touchend', (e) => {
       e.preventDefault();
+      console.log("touchend event, selectedTool:", selectedTool, "selectedEmoji:", selectedEmoji);
       if (selectedTool === 'emoji' && selectedEmoji) {
         placeEmoji(e);
         if ('ontouchstart' in window) { 
@@ -666,11 +677,14 @@
       if (selectedTool === 'eraser') { ctxToUse.globalCompositeOperation = 'source-over'; }
     }
 
-    function stopDraw() { isDrawing = false; }
+    function stopDraw() { 
+      isDrawing = false; 
+    }
 
     function placeEmoji(e) {
       const pos = getMousePos(drawingCanvas, e);
       const size = parseInt(document.getElementById('sizeSlider').value);
+      console.log("placeEmoji triggered at", pos, "with emoji:", selectedEmoji);
       // Emoji-freundliche Schriftarten
       context.font = `${size * 2}px "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif`;
       context.textAlign = 'center';
