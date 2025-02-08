@@ -33,7 +33,7 @@
       height: 1200px;
       background: linear-gradient(to bottom, #1e272e, #2c3539);
       border: 5px solid #6c5ce7;
-      box-shadow: inset 0 0 20px rgba(108, 92, 231, 0.8), 0 0 20px rgba(108, 92, 231, 0.8);
+      box-shadow: inset 0 0 20px rgba(108,92,231,0.8), 0 0 20px rgba(108,92,231,0.8);
     }
     .left-door {
       transform: rotateY(0deg);
@@ -55,8 +55,8 @@
       left: 50%;
       width: 600px;
       height: 800px;
-      background: radial-gradient(circle, rgba(108, 92, 231, 0.8), rgba(0, 0, 0, 0));
-      border: 2px solid rgba(108, 92, 231, 0.8);
+      background: radial-gradient(circle, rgba(108,92,231,0.8), rgba(0,0,0,0));
+      border: 2px solid rgba(108,92,231,0.8);
       border-radius: 20px;
       transform: translate(-50%, -50%) scale(0);
       animation: hologramEffect 4s ease-in-out forwards;
@@ -66,7 +66,7 @@
       50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
       100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
     }
-    /* Weißer Zeichenbereich */
+    /* Weißer Zeichenbereich – drei Canvas-Schichten */
     .white-drawing-page {
       position: fixed;
       top: 0;
@@ -76,11 +76,18 @@
       background-color: #ffffff;
       overflow: hidden;
     }
-    .drawing-canvas {
+    /* Die drei Schichten: Hintergrund, Zeichnung, Vorschau */
+    #backgroundCanvas,
+    #drawingCanvas,
+    #previewCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
       display: block;
-      width: 100%;
-      height: 100%;
     }
+    #backgroundCanvas { z-index: 0; }
+    #drawingCanvas    { z-index: 1; }
+    #previewCanvas    { z-index: 2; pointer-events: none; }
     /* Pinsel-Button */
     .brush-button {
       position: absolute;
@@ -96,7 +103,8 @@
       font-size: 24px;
       outline: none;
       transition: background-color 0.3s ease;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
     }
     .brush-button:hover { background-color: #74b9ff; }
     /* Menü */
@@ -108,12 +116,13 @@
       background-color: #ffffff;
       border: 2px solid #6c5ce7;
       padding: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       display: none;
       flex-direction: column;
       gap: 10px;
       overflow-y: auto;
       max-height: 80vh;
+      z-index: 9999;
     }
     .menu button {
       width: 100%;
@@ -135,9 +144,7 @@
       border-top: 1px solid #ccc;
       padding-top: 10px;
     }
-    #textOptions label {
-      font-size: 12px;
-    }
+    #textOptions label { font-size: 12px; }
     #textOptions input,
     #textOptions select {
       width: 100%;
@@ -145,11 +152,7 @@
       padding: 3px;
       font-size: 12px;
     }
-    #textOptions p {
-      font-size: 10px;
-      color: #888;
-      margin: 0;
-    }
+    #textOptions p { font-size: 10px; color: #888; margin: 0; }
     /* Container für Hauptwerkzeuge */
     #mainTools { display: flex; flex-direction: column; gap: 10px; }
     /* Container für Textwerkzeug (mit Rückkehr-Pfeil) */
@@ -205,7 +208,7 @@
       transition: transform 0.2s ease-in-out, box-shadow 0.2s;
       border: 2px solid transparent;
     }
-    .color-box:hover { transform: scale(1.2); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); }
+    .color-box:hover { transform: scale(1.2); box-shadow: 0 0 10px rgba(0,0,0,0.2); }
     .color-box.selected { border-color: #6c5ce7; border-width: 3px; }
   </style>
 </head>
@@ -217,13 +220,15 @@
     <div class="hologram"></div>
   </div>
 
-  <!-- Weißer Zeichenbereich -->
+  <!-- Weißer Zeichenbereich mit drei Canvas-Schichten -->
   <div class="white-drawing-page">
     <button id="brushButton" class="brush-button">🖌</button>
-    <!-- Haupt-Zeichen-Canvas -->
+    <!-- Hintergrundbild-Canvas -->
+    <canvas id="backgroundCanvas" class="drawing-canvas"></canvas>
+    <!-- Zeichnungs-Canvas -->
     <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
-    <!-- Preview-Canvas: Zeigt den transparenten Punkt, Emoji oder Textvorschau -->
-    <canvas id="previewCanvas" class="drawing-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+    <!-- Vorschau-Canvas -->
+    <canvas id="previewCanvas" class="drawing-canvas" style="pointer-events: none;"></canvas>
     <!-- Menü -->
     <div id="menu" class="menu">
       <!-- Container für Hauptwerkzeuge -->
@@ -269,7 +274,11 @@
           </div>
         </div>
         <input type="range" class="size-slider" min="1" max="50" value="5">
+        <!-- File-Upload für Zeichnungen -->
         <input type="file" class="file-upload" accept="image/*">
+        <!-- File-Upload für Hintergrundbilder -->
+        <label for="bgUpload" style="font-size:12px;">Hintergrundbild hochladen:</label>
+        <input type="file" id="bgUpload" class="file-upload" accept="image/*">
       </div>
       <!-- Container für Textwerkzeug (mit Rückkehr-Pfeil) -->
       <div id="textTools">
@@ -294,35 +303,38 @@
   </div>
 
   <script>
-    const mysticGateContainer = document.querySelector('.mystic-gate-container');
-    const whiteDrawingPage = document.querySelector('.white-drawing-page');
+    // --- Canvas-Elemente und Contexts ---
+    const backgroundCanvas = document.getElementById('backgroundCanvas');
+    const bgCtx = backgroundCanvas.getContext('2d');
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const context = drawingCanvas.getContext('2d');
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewContext = previewCanvas.getContext('2d');
+
+    // --- Größenanpassung der Canvases ---
+    function resizeCanvases() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      [backgroundCanvas, drawingCanvas, previewCanvas].forEach(canvas => {
+        canvas.width = width;
+        canvas.height = height;
+      });
+      // Hintergrund initial weiß füllen
+      bgCtx.fillStyle = "#ffffff";
+      bgCtx.fillRect(0, 0, width, height);
+    }
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+
+    // --- Weitere Elemente ---
     const brushButton = document.getElementById('brushButton');
     const menu = document.getElementById('menu');
     const mainTools = document.getElementById('mainTools');
     const textTools = document.getElementById('textTools');
     const backButton = document.getElementById('backButton');
-    const canvas = document.getElementById('drawingCanvas');
-    const context = canvas.getContext('2d');
-    // Preview-Canvas
-    const previewCanvas = document.getElementById('previewCanvas');
-    const previewContext = previewCanvas.getContext('2d');
-
-    // Setze die Größe beider Canvases
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    previewCanvas.width = window.innerWidth;
-    previewCanvas.height = window.innerHeight;
-
-    setTimeout(() => {
-      mysticGateContainer.style.animation = 'openMysticGate 4s ease-in-out forwards';
-      setTimeout(() => {
-        mysticGateContainer.style.display = 'none';
-        whiteDrawingPage.style.display = 'block';
-      }, 4000);
-    }, 1000);
+    const bgUpload = document.getElementById('bgUpload');
 
     let menuOpen = false;
-    let menuPin = false;
     let selectedTool = 'brush';
     let selectedColor = 'black';
     let isDrawing = false;
@@ -330,20 +342,56 @@
     let selectedEmoji = null;
     const undoStack = [];
     const redoStack = [];
+    let bgImageLoaded = false; // Gibt an, ob ein Hintergrundbild vorhanden ist
 
-    // Menü öffnen: Klick auf den Brush-Button stoppt das Event, damit das Menü nicht sofort wieder geschlossen wird
+    // --- Touch-Unterstützung & Mausposition ---
+    function getMousePos(canvas, evt) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (evt.touches && evt.touches.length > 0) {
+        clientX = evt.touches[0].clientX;
+        clientY = evt.touches[0].clientY;
+      } else {
+        clientX = evt.clientX;
+        clientY = evt.clientY;
+      }
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    // --- Hintergrundbild hochladen ---
+    bgUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+          bgCtx.drawImage(img, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+          bgImageLoaded = true;
+        };
+      }
+    });
+
+    // --- Menü öffnen/schließen ---
     brushButton.addEventListener('click', (e) => {
       e.stopPropagation();
       menu.style.display = menuOpen ? 'none' : 'flex';
       menuOpen = !menuOpen;
     });
-
-    // Stoppe das Propagation-Event auch beim Menü selbst
-    menu.addEventListener('click', (e) => {
-      e.stopPropagation();
+    menu.addEventListener('click', (e) => { e.stopPropagation(); });
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && !brushButton.contains(e.target)) {
+        menu.style.display = 'none';
+        menuOpen = false;
+      }
     });
 
-    // Back-Button im Textmodus
+    // --- Back-Button im Textmodus ---
     backButton.addEventListener('click', () => {
       menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
       mainTools.style.display = 'flex';
@@ -351,20 +399,17 @@
       selectedTool = 'brush';
     });
 
-    // Event Listener für die Werkzeug-Buttons in mainTools und textTools
+    // --- Werkzeug-Buttons ---
     menu.querySelectorAll('[data-tool]').forEach(button => {
       button.addEventListener('click', () => {
-        // Entferne die Markierung von allen Buttons
         menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
         button.classList.add('selected');
         const tool = button.dataset.tool;
         if (tool === 'text') {
-          // Wechsel in den Textmodus: Hauptwerkzeuge ausblenden, Text-Optionen einblenden
           mainTools.style.display = 'none';
           textTools.style.display = 'flex';
           selectedTool = 'text';
         } else {
-          // Andernfalls: Hauptwerkzeuge anzeigen und Text-Optionen ausblenden
           mainTools.style.display = 'flex';
           textTools.style.display = 'none';
           selectedTool = tool;
@@ -372,7 +417,7 @@
       });
     });
 
-    // Farbauswahl
+    // --- Farbauswahl ---
     document.querySelectorAll('.color-box').forEach(box => {
       box.addEventListener('click', () => {
         document.querySelector('.color-box.selected')?.classList.remove('selected');
@@ -381,92 +426,106 @@
       });
     });
 
-    // Emoji-Auswahl
+    // --- Emoji-Auswahl ---
     document.querySelectorAll('.emoji').forEach(emoji => {
       emoji.addEventListener('click', () => {
         document.querySelector('.emoji.selected')?.classList.remove('selected');
         emoji.classList.add('selected');
         selectedEmoji = emoji.textContent;
         selectedTool = 'emoji';
-        // Falls der Textmodus offen war, wechsle wieder ins Hauptmenü
         mainTools.style.display = 'flex';
         textTools.style.display = 'none';
       });
     });
 
-    // Gemeinsamer Canvas-Klick-Handler für Emoji und Textplatzierung
-    canvas.addEventListener('click', (e) => {
+    // --- Gemeinsamer Canvas-Klick-Handler ---
+    drawingCanvas.addEventListener('click', (e) => {
       if (selectedTool === 'emoji' && selectedEmoji) {
         placeEmoji(e);
       } else if (selectedTool === 'text') {
         placeText(e);
+      } else if (selectedTool === 'bucket') {
+        bucketFill(e);
       }
     });
 
-    // Zeichnen (für Pinsel, Bleistift, Marker, Radiergummi)
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDraw);
+    // --- Touch-Events für Zeichnungs-Canvas ---
+    drawingCanvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startDraw(e);
+    });
+    drawingCanvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      draw(e);
+    });
+    drawingCanvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      stopDraw();
+    });
 
-    function getMousePos(canvas, evt) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      return {
-        x: (evt.clientX - rect.left) * scaleX,
-        y: (evt.clientY - rect.top) * scaleY
-      };
-    }
+    // --- Maus-Events für Zeichnungs-Canvas ---
+    drawingCanvas.addEventListener('mousedown', startDraw);
+    drawingCanvas.addEventListener('mousemove', draw);
+    drawingCanvas.addEventListener('mouseup', stopDraw);
 
     function startDraw(e) {
-      if (selectedTool === 'emoji' || selectedTool === 'text') return;
+      if (selectedTool === 'emoji' || selectedTool === 'text' || selectedTool === 'bucket') return;
       isDrawing = true;
-      const mousePos = getMousePos(canvas, e);
-      [lastX, lastY] = [mousePos.x, mousePos.y];
+      const pos = getMousePos(drawingCanvas, e);
+      [lastX, lastY] = [pos.x, pos.y];
       saveState();
     }
 
     function draw(e) {
-      if (!isDrawing || selectedTool === 'emoji' || selectedTool === 'text') return;
-      const mousePos = getMousePos(canvas, e);
-      context.lineWidth = document.querySelector('.size-slider').value;
-      context.lineCap = 'round';
-      context.strokeStyle = selectedColor;
-      if (selectedTool === 'brush') {
-        context.globalAlpha = 1;
-      } else if (selectedTool === 'marker') {
-        context.globalAlpha = 0.5;
-      } else if (selectedTool === 'pencil') {
-        context.lineWidth = 1;
-        context.globalAlpha = 1;
-      } else if (selectedTool === 'eraser') {
-        context.globalCompositeOperation = 'destination-out';
-        context.strokeStyle = 'white';
+      if (!isDrawing || selectedTool === 'emoji' || selectedTool === 'text' || selectedTool === 'bucket') return;
+      const pos = getMousePos(drawingCanvas, e);
+      // Beim Radierer und vorhandenem Hintergrundbild wird der bgCtx genutzt
+      let ctxToUse = context;
+      if (selectedTool === 'eraser' && bgImageLoaded) {
+        ctxToUse = bgCtx;
       }
-      context.beginPath();
-      context.moveTo(lastX, lastY);
-      context.lineTo(mousePos.x, mousePos.y);
-      context.stroke();
-      [lastX, lastY] = [mousePos.x, mousePos.y];
+      ctxToUse.lineWidth = document.querySelector('.size-slider').value;
+      ctxToUse.lineCap = 'round';
+      if (selectedTool === 'brush') {
+        ctxToUse.globalAlpha = 1;
+        ctxToUse.strokeStyle = selectedColor;
+      } else if (selectedTool === 'marker') {
+        ctxToUse.globalAlpha = 0.5;
+        ctxToUse.strokeStyle = selectedColor;
+      } else if (selectedTool === 'pencil') {
+        ctxToUse.lineWidth = 1;
+        ctxToUse.globalAlpha = 1;
+        ctxToUse.strokeStyle = selectedColor;
+      } else if (selectedTool === 'eraser') {
+        ctxToUse.globalCompositeOperation = 'destination-out';
+        ctxToUse.strokeStyle = 'rgba(0,0,0,1)';
+      }
+      ctxToUse.beginPath();
+      ctxToUse.moveTo(lastX, lastY);
+      ctxToUse.lineTo(pos.x, pos.y);
+      ctxToUse.stroke();
+      [lastX, lastY] = [pos.x, pos.y];
+      if(selectedTool === 'eraser'){
+        ctxToUse.globalCompositeOperation = 'source-over';
+      }
     }
 
     function stopDraw() {
       isDrawing = false;
-      context.globalCompositeOperation = 'source-over';
     }
 
     function placeEmoji(e) {
-      const mousePos = getMousePos(canvas, e);
+      const pos = getMousePos(drawingCanvas, e);
       const size = parseInt(document.querySelector('.size-slider').value);
       context.font = `${size * 2}px Arial`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(selectedEmoji, mousePos.x, mousePos.y);
+      context.fillText(selectedEmoji, pos.x, pos.y);
       saveState();
     }
 
     function placeText(e) {
-      const mousePos = getMousePos(canvas, e);
+      const pos = getMousePos(drawingCanvas, e);
       const size = parseInt(document.querySelector('.size-slider').value);
       const text = document.getElementById('textInput').value;
       const fontSelect = document.getElementById('fontSelect').value;
@@ -474,18 +533,56 @@
       context.font = `${size * 2}px ${fontSelect}`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(text, mousePos.x, mousePos.y);
+      context.fillText(text, pos.x, pos.y);
       saveState();
     }
 
-    function fillCanvas() {
-      context.fillStyle = selectedColor;
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      saveState();
+    // --- Bucket-Funktion (Farbeimer) auf dem Hintergrund-Canvas ---
+    function bucketFill(e) {
+      const pos = getMousePos(backgroundCanvas, e);
+      const x = Math.floor(pos.x);
+      const y = Math.floor(pos.y);
+      floodFill(bgCtx, x, y, selectedColor);
+    }
+
+    // --- Flood-Fill-Algorithmus ---
+    function floodFill(ctx, startX, startY, fillColor) {
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      const startIdx = (startY * width + startX) * 4;
+      const targetColor = [data[startIdx], data[startIdx+1], data[startIdx+2], data[startIdx+3]];
+      const fillColorArr = parseRGB(fillColor);
+      if (colorsMatch(targetColor, fillColorArr)) return;
+      const stack = [[startX, startY]];
+      while(stack.length) {
+        const [x, y] = stack.pop();
+        const idx = (y * width + x) * 4;
+        if (!colorsMatch([data[idx], data[idx+1], data[idx+2], data[idx+3]], targetColor)) continue;
+        data[idx] = fillColorArr[0];
+        data[idx+1] = fillColorArr[1];
+        data[idx+2] = fillColorArr[2];
+        data[idx+3] = fillColorArr[3];
+        if (x > 0) stack.push([x-1, y]);
+        if (x < width - 1) stack.push([x+1, y]);
+        if (y > 0) stack.push([x, y-1]);
+        if (y < height - 1) stack.push([x, y+1]);
+      }
+      ctx.putImageData(imageData, 0, 0);
+    }
+    function colorsMatch(c1, c2) {
+      return c1[0] === c2[0] && c1[1] === c2[1] &&
+             c1[2] === c2[2] && c1[3] === c2[3];
+    }
+    function parseRGB(colorStr) {
+      const nums = colorStr.match(/\d+/g).map(Number);
+      if (nums.length === 3) nums.push(255);
+      return nums;
     }
 
     function saveState() {
-      undoStack.push(canvas.toDataURL());
+      undoStack.push(drawingCanvas.toDataURL());
       redoStack.length = 0;
     }
 
@@ -495,43 +592,35 @@
         const img = new Image();
         img.src = undoStack[undoStack.length - 1];
         img.onload = () => {
-          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
           context.drawImage(img, 0, 0);
         };
       }
     });
-
     menu.querySelector('[data-tool="redo"]').addEventListener('click', () => {
       if (redoStack.length > 0) {
         const img = new Image();
         img.src = redoStack.pop();
         img.onload = () => {
-          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
           context.drawImage(img, 0, 0);
         };
         undoStack.push(img.src);
       }
     });
-
     menu.querySelector('.file-upload').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         const img = new Image();
         img.src = URL.createObjectURL(file);
         img.onload = () => {
-          context.drawImage(img, 0, 0, canvas.width, canvas.height);
+          context.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+          saveState();
         };
       }
     });
 
-    document.addEventListener('click', (e) => {
-      if (!menu.contains(e.target) && !brushButton.contains(e.target) && !menuPin) {
-        menu.style.display = 'none';
-        menuOpen = false;
-      }
-    });
-
-    // Drag-Scrolling für Emoji- und Farbauswahl
+    // --- Drag-Scrolling für Emoji- und Farbauswahl ---
     let isDown = false, startX, scrollLeft;
     document.querySelector(".scroll-container").addEventListener("mousedown", (e) => {
       isDown = true;
@@ -562,20 +651,21 @@
       document.querySelector(".color-scroll-container").scrollLeft = scrollLeft - walk;
     });
 
-    menu.querySelector('[data-tool="bucket"]').addEventListener('click', fillCanvas);
+    menu.querySelector('[data-tool="bucket"]').addEventListener('click', () => {
+      selectedTool = 'bucket';
+    });
 
-    // Preview: Zeigt einen transparenten Punkt, Emoji oder Textvorschau an der Mausposition
-    previewCanvas.addEventListener('mousemove', drawTransparentPreview);
+    // --- Preview: Touch- & Maus-Events für die Vorschau ---
     function drawTransparentPreview(e) {
       previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-      const mousePos = getMousePos(previewCanvas, e);
+      const pos = getMousePos(previewCanvas, e);
       const size = parseInt(document.querySelector('.size-slider').value);
       previewContext.globalAlpha = 0.5;
       if (selectedTool === 'emoji' && selectedEmoji) {
         previewContext.font = `${size * 2}px Arial`;
         previewContext.textAlign = 'center';
         previewContext.textBaseline = 'middle';
-        previewContext.fillText(selectedEmoji, mousePos.x, mousePos.y);
+        previewContext.fillText(selectedEmoji, pos.x, pos.y);
       } else if (selectedTool === 'text') {
         const text = document.getElementById('textInput').value;
         const fontSelect = document.getElementById('fontSelect').value;
@@ -583,16 +673,21 @@
           previewContext.font = `${size * 2}px ${fontSelect}`;
           previewContext.textAlign = 'center';
           previewContext.textBaseline = 'middle';
-          previewContext.fillText(text, mousePos.x, mousePos.y);
+          previewContext.fillText(text, pos.x, pos.y);
         }
       } else {
         previewContext.fillStyle = selectedColor;
         previewContext.beginPath();
-        previewContext.arc(mousePos.x, mousePos.y, size / 2, 0, 2 * Math.PI);
+        previewContext.arc(pos.x, pos.y, size / 2, 0, 2 * Math.PI);
         previewContext.fill();
       }
       previewContext.globalAlpha = 1;
     }
+    previewCanvas.addEventListener('mousemove', drawTransparentPreview);
+    previewCanvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      drawTransparentPreview(e);
+    });
   </script>
 </body>
 </html>
