@@ -84,6 +84,23 @@
       background-color: lightblue;
       border-radius: 5px;
     }
+    .color-container {
+      display: flex;
+      gap: 5px;
+    }
+    .color-box {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .color-box.selected {
+      border: 3px solid black;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -98,6 +115,19 @@
     <button id="emojiTool">😀 Emoji</button>
     <button id="undoButton">↩️ Rückgängig</button>
     <button id="clearButton">🗑️ Löschen</button>
+
+    <!-- Farbauswahl -->
+    <div class="color-container">
+      <div class="color-box" style="background-color: black;"></div>
+      <div class="color-box" style="background-color: red;"></div>
+      <div class="color-box" style="background-color: blue;"></div>
+      <div class="color-box" style="background-color: green;"></div>
+      <div class="color-box" style="background-color: yellow;"></div>
+    </div>
+
+    <!-- Größe anpassen -->
+    <label>Größe:</label>
+    <input type="range" id="sizeSlider" min="5" max="50" value="10">
   </div>
 
   <!-- Emoji-Auswahl -->
@@ -123,6 +153,8 @@
     const ctx = canvas.getContext("2d");
     let selectedTool = "brush";
     let selectedEmoji = null;
+    let selectedColor = "black";
+    let brushSize = 10;
     let isDrawing = false;
     let lastX, lastY;
 
@@ -139,6 +171,20 @@
     document.getElementById("eraserTool").addEventListener("click", () => selectedTool = "eraser");
     document.getElementById("emojiTool").addEventListener("click", () => selectedTool = "emoji");
 
+    // Farbe auswählen
+    document.querySelectorAll(".color-box").forEach(box => {
+      box.addEventListener("click", () => {
+        document.querySelector(".color-box.selected")?.classList.remove("selected");
+        box.classList.add("selected");
+        selectedColor = box.style.backgroundColor;
+      });
+    });
+
+    // Größe auswählen
+    document.getElementById("sizeSlider").addEventListener("input", (e) => {
+      brushSize = e.target.value;
+    });
+
     // Emojis auswählen
     document.querySelectorAll(".emoji").forEach(emoji => {
       emoji.addEventListener("click", () => {
@@ -149,7 +195,6 @@
       });
     });
 
-    // Zeichnen starten
     function startDraw(e) {
       if (selectedTool === "emoji") return;
       isDrawing = true;
@@ -157,38 +202,25 @@
       [lastX, lastY] = [pos.x, pos.y];
     }
 
-    // Zeichnen fortsetzen
     function draw(e) {
       if (!isDrawing || selectedTool === "emoji") return;
       const pos = getMousePos(e);
-      ctx.lineWidth = 5;
+      ctx.lineWidth = brushSize;
       ctx.lineCap = "round";
-      if (selectedTool === "brush") {
-        ctx.strokeStyle = "black";
-      } else if (selectedTool === "pencil") {
-        ctx.strokeStyle = "gray";
-      } else if (selectedTool === "eraser") {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.strokeStyle = "rgba(0,0,0,1)";
-      }
+      ctx.strokeStyle = selectedTool === "eraser" ? "white" : selectedColor;
       ctx.beginPath();
       ctx.moveTo(lastX, lastY);
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
       [lastX, lastY] = [pos.x, pos.y];
-      if (selectedTool === "eraser") ctx.globalCompositeOperation = "source-over";
     }
 
-    // Zeichnen stoppen
-    function stopDraw() {
-      isDrawing = false;
-    }
+    function stopDraw() { isDrawing = false; }
 
-    // Emoji setzen
     function placeEmoji(e) {
       if (selectedTool !== "emoji" || !selectedEmoji) return;
       const pos = getMousePos(e);
-      ctx.font = "50px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif";
+      ctx.font = `${brushSize * 2}px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(selectedEmoji, pos.x, pos.y);
@@ -196,26 +228,13 @@
 
     function getMousePos(e) {
       const rect = canvas.getBoundingClientRect();
-      return {
-        x: e.touches ? e.touches[0].clientX - rect.left : e.clientX - rect.left,
-        y: e.touches ? e.touches[0].clientY - rect.top : e.clientY - rect.top
-      };
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     }
 
-    // Event-Listener für Touch & Maus
     canvas.addEventListener("mousedown", startDraw);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDraw);
-    canvas.addEventListener("mouseleave", stopDraw);
     canvas.addEventListener("click", placeEmoji);
-
-    canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startDraw(e); placeEmoji(e); });
-    canvas.addEventListener("touchmove", (e) => { e.preventDefault(); draw(e); });
-    canvas.addEventListener("touchend", stopDraw);
-
-    // Rückgängig & Löschen
-    document.getElementById("undoButton").addEventListener("click", () => ctx.clearRect(0, 0, canvas.width, canvas.height));
-    document.getElementById("clearButton").addEventListener("click", () => ctx.clearRect(0, 0, canvas.width, canvas.height));
 
   </script>
 
