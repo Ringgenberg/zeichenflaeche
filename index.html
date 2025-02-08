@@ -1,155 +1,598 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeichenfläche</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .canvas-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: white; 
-            border: 2px solid #000; 
-            margin: 10px auto; 
-            width: 95vw; 
-            max-width: 800px; 
-            height: 60vh; 
-            position: relative; 
-        }
-        canvas { 
-            width: 100%; 
-            height: 100%;
-            touch-action: none;
-            background-color: white;
-            border: 1px solid black;
-            cursor: crosshair;
-        }
-        .toolbar, .emoji-toolbar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .color-palette, .emoji-toolbar {
-            display: flex;
-            gap: 5px;
-        }
-        .color-button, .emoji-button, .eraser-button, .bucket-button, .emoji-selector {
-            width: 30px; height: 30px;
-            border: 2px solid #000;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-        .eraser-button { border-style: dashed; background: transparent; }
-        .bucket-button { border-radius: 5px; background: #FFD700; }
-        .emoji-selector { border-radius: 5px; line-height: 30px; text-align: center; font-size: 18px; cursor: pointer; }
-        button { background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
-        button:hover { background: #0056b3; }
-        input[type="range"] { width: 100px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystisches Modernes Design mit Weißer Fläche</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+    }
+    body {
+      background: radial-gradient(circle, #1b1b1b, #000);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Roboto', sans-serif;
+    }
+    /* Mystisches Tor */
+    .mystic-gate-container {
+      perspective: 1000px;
+      transform-style: preserve-3d;
+      position: relative;
+      width: 800px;
+      height: 1200px;
+      animation: openMysticGate 4s ease-in-out forwards;
+    }
+    .gate-door {
+      position: absolute;
+      width: 400px;
+      height: 1200px;
+      background: linear-gradient(to bottom, #1e272e, #2c3539);
+      border: 5px solid #6c5ce7;
+      box-shadow: inset 0 0 20px rgba(108, 92, 231, 0.8), 0 0 20px rgba(108, 92, 231, 0.8);
+    }
+    .left-door {
+      transform: rotateY(0deg);
+      transform-origin: left;
+    }
+    .right-door {
+      transform: rotateY(0deg);
+      transform-origin: right;
+    }
+    @keyframes openMysticGate {
+      0% { transform: rotateY(0deg); }
+      50% { transform: rotateY(-45deg); }
+      100% { transform: rotateY(-90deg); }
+    }
+    /* Holografischer Effekt */
+    .hologram {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 600px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(108, 92, 231, 0.8), rgba(0, 0, 0, 0));
+      border: 2px solid rgba(108, 92, 231, 0.8);
+      border-radius: 20px;
+      transform: translate(-50%, -50%) scale(0);
+      animation: hologramEffect 4s ease-in-out forwards;
+    }
+    @keyframes hologramEffect {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+    }
+    /* Weißer Zeichenbereich */
+    .white-drawing-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+    .drawing-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* Pinsel-Button */
+    .brush-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      outline: none;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .brush-button:hover { background-color: #74b9ff; }
+    /* Menü */
+    .menu {
+      position: absolute;
+      top: 90px;
+      left: 20px;
+      width: 220px;
+      background-color: #ffffff;
+      border: 2px solid #6c5ce7;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+    .menu button {
+      width: 100%;
+      padding: 10px;
+      background-color: #6c5ce7;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      border-radius: 5px;
+    }
+    .menu button:hover { background-color: #74b9ff; }
+    .menu .size-slider { width: 100%; }
+    .menu .file-upload { width: 100%; }
+    /* Text-Untermenü */
+    #textOptions {
+      margin-top: 10px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    #textOptions label {
+      font-size: 12px;
+    }
+    #textOptions input,
+    #textOptions select {
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 3px;
+      font-size: 12px;
+    }
+    #textOptions p {
+      font-size: 10px;
+      color: #888;
+      margin: 0;
+    }
+    /* Container für Hauptwerkzeuge */
+    #mainTools { display: flex; flex-direction: column; gap: 10px; }
+    /* Container für Textwerkzeug (mit Rückkehr-Pfeil) */
+    #textTools { display: none; flex-direction: column; gap: 10px; }
+    /* Scrollbarer Emoji-Balken */
+    .scroll-container {
+      width: 300px;
+      height: 60px;
+      overflow-x: auto;
+      white-space: nowrap;
+      background-color: #fff;
+      padding: 5px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      cursor: grab;
+      user-select: none;
+      scrollbar-width: none;
+    }
+    .scroll-container::-webkit-scrollbar { display: none; }
+    .scroll-content { display: inline-block; font-size: 40px; padding: 5px; }
+    .emoji {
+      display: inline-block;
+      cursor: pointer;
+      padding: 5px;
+      transition: transform 0.2s ease-in-out;
+      opacity: 0.5;
+    }
+    .emoji:hover { transform: scale(1.3); }
+    .emoji.selected { opacity: 1; }
+    /* Scrollbare Farbauswahl */
+    .color-scroll-container {
+      width: 300px;
+      height: 60px;
+      overflow-x: auto;
+      white-space: nowrap;
+      background-color: #fff;
+      padding: 5px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      cursor: grab;
+      user-select: none;
+      scrollbar-width: none;
+    }
+    .color-scroll-container::-webkit-scrollbar { display: none; }
+    .color-scroll-content { display: inline-block; padding: 5px; }
+    .color-box {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 0 5px;
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+      border: 2px solid transparent;
+    }
+    .color-box:hover { transform: scale(1.2); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); }
+    .color-box.selected { border-color: #6c5ce7; border-width: 3px; }
+  </style>
 </head>
 <body>
-    <h1>Zeichenfläche</h1>
-    <div class="toolbar">
-        <div class="color-palette" id="colorPalette">
-            <button class="color-button" style="background: red;" data-color="red"></button>
-            <button class="color-button" style="background: blue;" data-color="blue"></button>
-            <button class="color-button" style="background: green;" data-color="green"></button>
-            <button class="color-button" style="background: yellow;" data-color="yellow"></button>
-            <button class="color-button" style="background: purple;" data-color="purple"></button>
-            <button class="color-button" style="background: orange;" data-color="orange"></button>
-            <button class="color-button" style="background: black;" data-color="black"></button>
-            <button class="color-button" style="background: gray;" data-color="gray"></button>
+  <!-- Mystisches Tor -->
+  <div class="mystic-gate-container">
+    <div class="gate-door left-door"></div>
+    <div class="gate-door right-door"></div>
+    <div class="hologram"></div>
+  </div>
+
+  <!-- Weißer Zeichenbereich -->
+  <div class="white-drawing-page">
+    <button id="brushButton" class="brush-button">🖌</button>
+    <!-- Haupt-Zeichen-Canvas -->
+    <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
+    <!-- Preview-Canvas: Zeigt den transparenten Punkt, Emoji oder Textvorschau -->
+    <canvas id="previewCanvas" class="drawing-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+    <!-- Menü -->
+    <div id="menu" class="menu">
+      <!-- Container für Hauptwerkzeuge -->
+      <div id="mainTools">
+        <div class="color-scroll-container">
+          <div class="color-scroll-content">
+            <div class="color-box" style="background-color: #ff0000;"></div>
+            <div class="color-box" style="background-color: #ff8000;"></div>
+            <div class="color-box" style="background-color: #ffff00;"></div>
+            <div class="color-box" style="background-color: #80ff00;"></div>
+            <div class="color-box" style="background-color: #00ff00;"></div>
+            <div class="color-box" style="background-color: #00ff80;"></div>
+            <div class="color-box" style="background-color: #00ffff;"></div>
+            <div class="color-box" style="background-color: #0080ff;"></div>
+            <div class="color-box" style="background-color: #0000ff;"></div>
+            <div class="color-box" style="background-color: #8000ff;"></div>
+            <div class="color-box" style="background-color: #ff00ff;"></div>
+            <div class="color-box" style="background-color: #ff0080;"></div>
+            <div class="color-box" style="background-color: #000000;"></div>
+            <div class="color-box" style="background-color: #808080;"></div>
+            <div class="color-box" style="background-color: #ffffff; border: 2px solid #ccc;"></div>
+          </div>
         </div>
-        <input type="range" id="brushSize" min="10" max="100" value="20">
-        <button id="undo">←</button>
-        <button id="redo">→</button>
-        <button id="clearCanvas">🗑️</button>
-        <button class="bucket-button" id="fillBucket"></button>
-        <button class="eraser-button" id="eraserButton"></button>
-        <button class="emoji-selector" id="emojiSelector">😊</button>
+        <button data-tool="brush">Pinsel</button>
+        <button data-tool="pencil">Bleistift</button>
+        <button data-tool="marker">Marker</button>
+        <button data-tool="bucket">Farbeimer</button>
+        <button data-tool="eraser">Radiergummi</button>
+        <button data-tool="emoji">Emoji</button>
+        <button data-tool="text">Text</button>
+        <button data-tool="undo">← Rückgängig</button>
+        <button data-tool="redo">→ Wiederherstellen</button>
+        <div class="scroll-container">
+          <div class="scroll-content">
+            <span class="emoji">😀</span> <span class="emoji">😃</span> <span class="emoji">😄</span>
+            <span class="emoji">😁</span> <span class="emoji">😆</span> <span class="emoji">😅</span>
+            <span class="emoji">😂</span> <span class="emoji">🤣</span> <span class="emoji">😊</span>
+            <span class="emoji">😇</span> <span class="emoji">😉</span> <span class="emoji">😍</span>
+            <span class="emoji">🥰</span> <span class="emoji">😘</span> <span class="emoji">😎</span>
+            <span class="emoji">🤩</span> <span class="emoji">🥳</span> <span class="emoji">🤗</span>
+            <span class="emoji">😜</span> <span class="emoji">🤔</span> <span class="emoji">🧐</span>
+            <span class="emoji">🤓</span> <span class="emoji">🤠</span>
+          </div>
+        </div>
+        <input type="range" class="size-slider" min="1" max="50" value="5">
+        <input type="file" class="file-upload" accept="image/*">
+      </div>
+      <!-- Container für Textwerkzeug (mit Rückkehr-Pfeil) -->
+      <div id="textTools">
+        <button id="backButton" style="width:100%; padding:10px; background-color:#6c5ce7; color:black; border:none; cursor:pointer; font-size:14px; transition: background-color 0.3s ease; border-radius:5px;">
+          ← Hauptmenü
+        </button>
+        <div id="textOptions">
+          <label for="textInput">Text:</label>
+          <input type="text" id="textInput" placeholder="Dein Text">
+          <label for="fontSelect">Font:</label>
+          <select id="fontSelect">
+            <option value="Arial">Arial</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Georgia">Georgia</option>
+          </select>
+          <p>Klicke auf die Leinwand zum Platzieren</p>
+        </div>
+      </div>
     </div>
-    <div class="emoji-toolbar" id="emojiPalette" style="display: none;">
-        <button class="emoji-button" data-emoji="😘">😘</button>
-        <button class="emoji-button" data-emoji="❤️">❤️</button>
-        <button class="emoji-button" data-emoji="😅">😅</button>
-        <button class="emoji-button" data-emoji="😋">😋</button>
-        <button class="emoji-button" data-emoji="👍">👍</button>
-        <button class="emoji-button" data-emoji="🤣">🤣</button>
-        <button class="emoji-button" data-emoji="😍">😍</button>
-        <button class="emoji-button" data-emoji="😉">😉</button>
-    </div>
-    <div class="canvas-container">
-        <canvas id="drawingCanvas"></canvas>
-    </div>
-    <script>
-        const canvas = document.getElementById("drawingCanvas");
-        const ctx = canvas.getContext("2d");
-        let drawing = false;
-        let selectedColor = "black";
-        let brushSize = 20;
-        let selectedEmoji = "😊";
-        let isStamping = false;
+  </div>
 
-        function resizeCanvas() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
+  <script>
+    const mysticGateContainer = document.querySelector('.mystic-gate-container');
+    const whiteDrawingPage = document.querySelector('.white-drawing-page');
+    const brushButton = document.getElementById('brushButton');
+    const menu = document.getElementById('menu');
+    const mainTools = document.getElementById('mainTools');
+    const textTools = document.getElementById('textTools');
+    const backButton = document.getElementById('backButton');
+    const canvas = document.getElementById('drawingCanvas');
+    const context = canvas.getContext('2d');
+    // Preview-Canvas
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewContext = previewCanvas.getContext('2d');
+
+    // Setze die Größe beider Canvases
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    previewCanvas.width = window.innerWidth;
+    previewCanvas.height = window.innerHeight;
+
+    setTimeout(() => {
+      mysticGateContainer.style.animation = 'openMysticGate 4s ease-in-out forwards';
+      setTimeout(() => {
+        mysticGateContainer.style.display = 'none';
+        whiteDrawingPage.style.display = 'block';
+      }, 4000);
+    }, 1000);
+
+    let menuOpen = false;
+    let menuPin = false;
+    let selectedTool = 'brush';
+    let selectedColor = 'black';
+    let isDrawing = false;
+    let lastX, lastY;
+    let selectedEmoji = null;
+    const undoStack = [];
+    const redoStack = [];
+
+    // Menü öffnen: Klick auf den Brush-Button stoppt das Event, damit das Menü nicht sofort wieder geschlossen wird
+    brushButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.style.display = menuOpen ? 'none' : 'flex';
+      menuOpen = !menuOpen;
+    });
+
+    // Stoppe das Propagation-Event auch beim Menü selbst
+    menu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Back-Button im Textmodus
+    backButton.addEventListener('click', () => {
+      menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+      mainTools.style.display = 'flex';
+      textTools.style.display = 'none';
+      selectedTool = 'brush';
+    });
+
+    // Event Listener für die Werkzeug-Buttons in mainTools und textTools
+    menu.querySelectorAll('[data-tool]').forEach(button => {
+      button.addEventListener('click', () => {
+        // Entferne die Markierung von allen Buttons
+        menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+        const tool = button.dataset.tool;
+        if (tool === 'text') {
+          // Wechsel in den Textmodus: Hauptwerkzeuge ausblenden, Text-Optionen einblenden
+          mainTools.style.display = 'none';
+          textTools.style.display = 'flex';
+          selectedTool = 'text';
+        } else {
+          // Andernfalls: Hauptwerkzeuge anzeigen und Text-Optionen ausblenden
+          mainTools.style.display = 'flex';
+          textTools.style.display = 'none';
+          selectedTool = tool;
         }
-        window.addEventListener("resize", resizeCanvas);
-        resizeCanvas();
+      });
+    });
 
-        document.querySelectorAll(".color-button").forEach(button => {
-            button.addEventListener("click", function() {
-                selectedColor = this.getAttribute("data-color");
-                isStamping = false;
-            });
-        });
+    // Farbauswahl
+    document.querySelectorAll('.color-box').forEach(box => {
+      box.addEventListener('click', () => {
+        document.querySelector('.color-box.selected')?.classList.remove('selected');
+        box.classList.add('selected');
+        selectedColor = getComputedStyle(box).backgroundColor;
+      });
+    });
 
-        document.getElementById("brushSize").addEventListener("input", function() {
-            brushSize = this.value;
-        });
+    // Emoji-Auswahl
+    document.querySelectorAll('.emoji').forEach(emoji => {
+      emoji.addEventListener('click', () => {
+        document.querySelector('.emoji.selected')?.classList.remove('selected');
+        emoji.classList.add('selected');
+        selectedEmoji = emoji.textContent;
+        selectedTool = 'emoji';
+        // Falls der Textmodus offen war, wechsle wieder ins Hauptmenü
+        mainTools.style.display = 'flex';
+        textTools.style.display = 'none';
+      });
+    });
 
-        canvas.addEventListener("mousedown", (event) => {
-            if (isStamping) {
-                ctx.font = `${brushSize}px Arial`;
-                ctx.fillText(selectedEmoji, event.offsetX, event.offsetY);
-            } else {
-                drawing = true;
-                ctx.beginPath();
-                ctx.moveTo(event.offsetX, event.offsetY);
-            }
-        });
+    // Gemeinsamer Canvas-Klick-Handler für Emoji und Textplatzierung
+    canvas.addEventListener('click', (e) => {
+      if (selectedTool === 'emoji' && selectedEmoji) {
+        placeEmoji(e);
+      } else if (selectedTool === 'text') {
+        placeText(e);
+      }
+    });
 
-        canvas.addEventListener("mousemove", (event) => {
-            if (!drawing || isStamping) return;
-            ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = "round";
-            ctx.lineTo(event.offsetX, event.offsetY);
-            ctx.stroke();
-        });
+    // Zeichnen (für Pinsel, Bleistift, Marker, Radiergummi)
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
 
-        canvas.addEventListener("mouseup", () => {
-            drawing = false;
-            ctx.beginPath();
-        });
+    function getMousePos(canvas, evt) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (evt.clientX - rect.left) * scaleX,
+        y: (evt.clientY - rect.top) * scaleY
+      };
+    }
 
-        document.getElementById("emojiSelector").addEventListener("click", () => {
-            document.getElementById("emojiPalette").style.display = "flex";
-        });
+    function startDraw(e) {
+      if (selectedTool === 'emoji' || selectedTool === 'text') return;
+      isDrawing = true;
+      const mousePos = getMousePos(canvas, e);
+      [lastX, lastY] = [mousePos.x, mousePos.y];
+      saveState();
+    }
 
-        document.querySelectorAll(".emoji-button").forEach(button => {
-            button.addEventListener("click", function() {
-                selectedEmoji = this.getAttribute("data-emoji");
-                document.getElementById("emojiSelector").textContent = selectedEmoji;
-                document.getElementById("emojiPalette").style.display = "none";
-                isStamping = true;
-            });
-        });
-    </script>
+    function draw(e) {
+      if (!isDrawing || selectedTool === 'emoji' || selectedTool === 'text') return;
+      const mousePos = getMousePos(canvas, e);
+      context.lineWidth = document.querySelector('.size-slider').value;
+      context.lineCap = 'round';
+      context.strokeStyle = selectedColor;
+      if (selectedTool === 'brush') {
+        context.globalAlpha = 1;
+      } else if (selectedTool === 'marker') {
+        context.globalAlpha = 0.5;
+      } else if (selectedTool === 'pencil') {
+        context.lineWidth = 1;
+        context.globalAlpha = 1;
+      } else if (selectedTool === 'eraser') {
+        context.globalCompositeOperation = 'destination-out';
+        context.strokeStyle = 'white';
+      }
+      context.beginPath();
+      context.moveTo(lastX, lastY);
+      context.lineTo(mousePos.x, mousePos.y);
+      context.stroke();
+      [lastX, lastY] = [mousePos.x, mousePos.y];
+    }
+
+    function stopDraw() {
+      isDrawing = false;
+      context.globalCompositeOperation = 'source-over';
+    }
+
+    function placeEmoji(e) {
+      const mousePos = getMousePos(canvas, e);
+      const size = parseInt(document.querySelector('.size-slider').value);
+      context.font = `${size * 2}px Arial`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(selectedEmoji, mousePos.x, mousePos.y);
+      saveState();
+    }
+
+    function placeText(e) {
+      const mousePos = getMousePos(canvas, e);
+      const size = parseInt(document.querySelector('.size-slider').value);
+      const text = document.getElementById('textInput').value;
+      const fontSelect = document.getElementById('fontSelect').value;
+      if (!text) return;
+      context.font = `${size * 2}px ${fontSelect}`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, mousePos.x, mousePos.y);
+      saveState();
+    }
+
+    function fillCanvas() {
+      context.fillStyle = selectedColor;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      saveState();
+    }
+
+    function saveState() {
+      undoStack.push(canvas.toDataURL());
+      redoStack.length = 0;
+    }
+
+    menu.querySelector('[data-tool="undo"]').addEventListener('click', () => {
+      if (undoStack.length > 1) {
+        redoStack.push(undoStack.pop());
+        const img = new Image();
+        img.src = undoStack[undoStack.length - 1];
+        img.onload = () => {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(img, 0, 0);
+        };
+      }
+    });
+
+    menu.querySelector('[data-tool="redo"]').addEventListener('click', () => {
+      if (redoStack.length > 0) {
+        const img = new Image();
+        img.src = redoStack.pop();
+        img.onload = () => {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(img, 0, 0);
+        };
+        undoStack.push(img.src);
+      }
+    });
+
+    menu.querySelector('.file-upload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && !brushButton.contains(e.target) && !menuPin) {
+        menu.style.display = 'none';
+        menuOpen = false;
+      }
+    });
+
+    // Drag-Scrolling für Emoji- und Farbauswahl
+    let isDown = false, startX, scrollLeft;
+    document.querySelector(".scroll-container").addEventListener("mousedown", (e) => {
+      isDown = true;
+      startX = e.pageX - document.querySelector(".scroll-container").offsetLeft;
+      scrollLeft = document.querySelector(".scroll-container").scrollLeft;
+    });
+    document.querySelector(".scroll-container").addEventListener("mouseleave", () => { isDown = false; });
+    document.querySelector(".scroll-container").addEventListener("mouseup", () => { isDown = false; });
+    document.querySelector(".scroll-container").addEventListener("mousemove", (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - document.querySelector(".scroll-container").offsetLeft;
+      const walk = (x - startX) * 2;
+      document.querySelector(".scroll-container").scrollLeft = scrollLeft - walk;
+    });
+    document.querySelector(".color-scroll-container").addEventListener("mousedown", (e) => {
+      isDown = true;
+      startX = e.pageX - document.querySelector(".color-scroll-container").offsetLeft;
+      scrollLeft = document.querySelector(".color-scroll-container").scrollLeft;
+    });
+    document.querySelector(".color-scroll-container").addEventListener("mouseleave", () => { isDown = false; });
+    document.querySelector(".color-scroll-container").addEventListener("mouseup", () => { isDown = false; });
+    document.querySelector(".color-scroll-container").addEventListener("mousemove", (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - document.querySelector(".color-scroll-container").offsetLeft;
+      const walk = (x - startX) * 2;
+      document.querySelector(".color-scroll-container").scrollLeft = scrollLeft - walk;
+    });
+
+    menu.querySelector('[data-tool="bucket"]').addEventListener('click', fillCanvas);
+
+    // Preview: Zeigt einen transparenten Punkt, Emoji oder Textvorschau an der Mausposition
+    previewCanvas.addEventListener('mousemove', drawTransparentPreview);
+    function drawTransparentPreview(e) {
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      const mousePos = getMousePos(previewCanvas, e);
+      const size = parseInt(document.querySelector('.size-slider').value);
+      previewContext.globalAlpha = 0.5;
+      if (selectedTool === 'emoji' && selectedEmoji) {
+        previewContext.font = `${size * 2}px Arial`;
+        previewContext.textAlign = 'center';
+        previewContext.textBaseline = 'middle';
+        previewContext.fillText(selectedEmoji, mousePos.x, mousePos.y);
+      } else if (selectedTool === 'text') {
+        const text = document.getElementById('textInput').value;
+        const fontSelect = document.getElementById('fontSelect').value;
+        if (text) {
+          previewContext.font = `${size * 2}px ${fontSelect}`;
+          previewContext.textAlign = 'center';
+          previewContext.textBaseline = 'middle';
+          previewContext.fillText(text, mousePos.x, mousePos.y);
+        }
+      } else {
+        previewContext.fillStyle = selectedColor;
+        previewContext.beginPath();
+        previewContext.arc(mousePos.x, mousePos.y, size / 2, 0, 2 * Math.PI);
+        previewContext.fill();
+      }
+      previewContext.globalAlpha = 1;
+    }
+  </script>
 </body>
 </html>
