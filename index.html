@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-  <title>Zeichnen mit Emojis & Zoomen</title>
+  <title>Zeichen-App mit Emojis & Zoom</title>
   <style>
     body, html {
       margin: 0;
@@ -32,8 +32,6 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      display: flex;
-      align-items: center;
       z-index: 10;
     }
     .menu {
@@ -91,20 +89,42 @@
       cursor: pointer;
       padding: 5px;
     }
+    .page-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .page-buttons button {
+      flex: 1;
+      padding: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      border-radius: 3px;
+      background: lightgray;
+    }
+    .page-buttons button.active {
+      background: #6c5ce7;
+      color: white;
+    }
   </style>
 </head>
 <body>
 
   <div class="canvas-container">
-    <canvas id="drawingCanvas"></canvas>
+    <canvas id="canvas1" class="drawingCanvas"></canvas>
+    <canvas id="canvas2" class="drawingCanvas" style="display: none;"></canvas>
+    <canvas id="canvas3" class="drawingCanvas" style="display: none;"></canvas>
+    <canvas id="canvas4" class="drawingCanvas" style="display: none;"></canvas>
+    <canvas id="canvas5" class="drawingCanvas" style="display: none;"></canvas>
   </div>
 
   <div class="menu-container">
     <div class="menu" id="menu">
       <button id="brushTool">🖌 Pinsel</button>
       <button id="eraserTool">🧽 Radiergummi</button>
-      <button id="clearButton" style="font-size: 12px;">🗑️</button>
-      
+      <button id="undoButton">↩️ Rückgängig</button>
+      <button id="redoButton">↪️ Wiederherstellen</button>
+      <button id="clearButton">🗑️ Löschen</button>
+
       <div class="color-container">
         <div class="color-box" style="background-color: black;"></div>
         <div class="color-box" style="background-color: red;"></div>
@@ -115,6 +135,14 @@
 
       <label>Größe:</label>
       <input type="range" id="sizeSlider" min="5" max="50" value="10">
+
+      <div class="page-buttons">
+        <button data-page="1" class="active">1</button>
+        <button data-page="2">2</button>
+        <button data-page="3">3</button>
+        <button data-page="4">4</button>
+        <button data-page="5">5</button>
+      </div>
     </div>
 
     <button class="toggle-button" id="toggleMenu">⬅️</button>
@@ -132,9 +160,9 @@
   </div>
 
   <script>
-    const canvas = document.getElementById("drawingCanvas");
-    const ctx = canvas.getContext("2d");
-
+    let activeCanvas = 1;
+    let undoStack = [[]];
+    let redoStack = [[]];
     let drawing = false;
     let selectedColor = "black";
     let selectedSize = 10;
@@ -142,95 +170,56 @@
     let scale = 1;
     let lastDist = 0;
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    function switchCanvas(page) {
+      document.querySelectorAll(".drawingCanvas").forEach(canvas => canvas.style.display = "none");
+      document.getElementById(`canvas${page}`).style.display = "block";
+      activeCanvas = page;
     }
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
 
-    document.querySelectorAll(".color-box").forEach(box => {
-      box.addEventListener("click", () => {
-        document.querySelector(".color-box.selected")?.classList.remove("selected");
-        box.classList.add("selected");
-        selectedColor = getComputedStyle(box).backgroundColor;
+    document.querySelectorAll(".page-buttons button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelector(".page-buttons .active").classList.remove("active");
+        button.classList.add("active");
+        switchCanvas(button.dataset.page);
       });
     });
 
-    document.getElementById("sizeSlider").addEventListener("input", (e) => {
-      selectedSize = e.target.value;
-    });
-
-    document.getElementById("brushTool").addEventListener("click", () => {
-      selectedTool = "brush";
-    });
-
-    document.getElementById("eraserTool").addEventListener("click", () => {
-      selectedTool = "eraser";
-    });
-
-    document.getElementById("clearButton").addEventListener("click", () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
-
-    function getMousePos(evt) {
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: evt.clientX - rect.left,
-        y: evt.clientY - rect.top
-      };
+    function saveState() {
+      const canvas = document.getElementById(`canvas${activeCanvas}`);
+      undoStack[activeCanvas - 1].push(canvas.toDataURL());
+      redoStack[activeCanvas - 1] = [];
     }
 
-    function startDraw(evt) {
-      drawing = true;
-      const pos = getMousePos(evt);
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-    }
-
-    function draw(evt) {
-      if (!drawing) return;
-      const pos = getMousePos(evt);
-      ctx.lineWidth = selectedSize;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = selectedTool === "eraser" ? "white" : selectedColor;
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    }
-
-    function stopDraw() {
-      drawing = false;
-      ctx.closePath();
-    }
-
-    canvas.addEventListener("mousedown", startDraw);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", stopDraw);
-    canvas.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 2) return;
-      startDraw(e.touches[0]);
-    });
-    canvas.addEventListener("touchmove", (e) => {
-      if (e.touches.length === 2) {
-        let dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        if (lastDist) {
-          scale *= dist / lastDist;
-          canvas.style.transform = `scale(${scale})`;
-        }
-        lastDist = dist;
-        return;
+    document.getElementById("undoButton").addEventListener("click", () => {
+      if (undoStack[activeCanvas - 1].length > 1) {
+        redoStack[activeCanvas - 1].push(undoStack[activeCanvas - 1].pop());
+        const img = new Image();
+        img.src = undoStack[activeCanvas - 1][undoStack[activeCanvas - 1].length - 1];
+        img.onload = () => {
+          const ctx = document.getElementById(`canvas${activeCanvas}`).getContext("2d");
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          ctx.drawImage(img, 0, 0);
+        };
       }
-      draw(e.touches[0]);
     });
-    canvas.addEventListener("touchend", stopDraw);
+
+    document.getElementById("redoButton").addEventListener("click", () => {
+      if (redoStack[activeCanvas - 1].length > 0) {
+        const img = new Image();
+        img.src = redoStack[activeCanvas - 1].pop();
+        img.onload = () => {
+          const ctx = document.getElementById(`canvas${activeCanvas}`).getContext("2d");
+          ctx.drawImage(img, 0, 0);
+        };
+        undoStack[activeCanvas - 1].push(img.src);
+      }
+    });
 
     document.querySelectorAll(".emoji").forEach(emoji => {
       emoji.addEventListener("click", () => {
+        const ctx = document.getElementById(`canvas${activeCanvas}`).getContext("2d");
         ctx.font = "40px Arial";
-        ctx.fillText(emoji.textContent, Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.fillText(emoji.textContent, Math.random() * ctx.canvas.width, Math.random() * ctx.canvas.height);
       });
     });
   </script>
