@@ -10,7 +10,7 @@
       padding: 0;
       overflow: hidden;
       height: 100%;
-      touch-action: none; /* Verhindert Scrollen/Zoomen */
+      touch-action: none;
     }
     body {
       display: flex;
@@ -100,18 +100,39 @@
       });
     });
 
-    // Touch-Event für Emoji-Platzierung
-    canvas.addEventListener("touchstart", (e) => {
-      e.preventDefault(); // Verhindert Scrollen/Zoomen
+    // Emoji-Zeichnen mit Unterstützung für alle Browser
+    function drawEmoji(x, y) {
       if (!selectedEmoji) return;
+      
+      const size = 50; // Größe des Emojis
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = size;
+      tempCanvas.height = size;
+      const tempCtx = tempCanvas.getContext("2d");
+
+      tempCtx.font = `${size}px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif`;
+      tempCtx.textAlign = "center";
+      tempCtx.textBaseline = "middle";
+      tempCtx.fillText(selectedEmoji, size / 2, size / 2);
+
+      ctx.drawImage(tempCanvas, x - size / 2, y - size / 2, size, size);
+    }
+
+    // Touch- & Klick-Event für Emoji-Platzierung
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      const touch = e.touches[0]; // Ersten Finger erfassen
+      const touch = e.touches[0];
       const x = touch.clientX - rect.left;
       const y = touch.clientY - rect.top;
-      ctx.font = "50px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(selectedEmoji, x, y);
+      drawEmoji(x, y);
+    });
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      drawEmoji(x, y);
     });
 
   </script>
