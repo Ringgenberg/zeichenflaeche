@@ -2,227 +2,934 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-  <title>Zeichen-App mit Emojis & Zoom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystisches Modernes Design mit Weißer Fläche</title>
   <style>
+    /* Basisstyles */
     body, html {
       margin: 0;
       padding: 0;
       overflow: hidden;
       height: 100%;
-      font-family: Arial, sans-serif;
-      touch-action: none;
     }
-    .canvas-container {
+    body {
+      background: radial-gradient(circle, #1b1b1b, #000);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Roboto', sans-serif;
+    }
+    /* Mystisches Tor */
+    .mystic-gate-container {
+      perspective: 1000px;
+      transform-style: preserve-3d;
       position: relative;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      touch-action: none;
+      width: 800px;
+      height: 1200px;
+      animation: openMysticGate 4s ease-in-out forwards;
     }
-    canvas {
+    .gate-door {
       position: absolute;
+      width: 400px;
+      height: 1200px;
+      background: linear-gradient(to bottom, #1e272e, #2c3539);
+      border: 5px solid #6c5ce7;
+      box-shadow: inset 0 0 20px rgba(108,92,231,0.8), 0 0 20px rgba(108,92,231,0.8);
+    }
+    .left-door { transform: rotateY(0deg); transform-origin: left; }
+    .right-door { transform: rotateY(0deg); transform-origin: right; }
+    @keyframes openMysticGate {
+      0% { transform: rotateY(0deg); }
+      50% { transform: rotateY(-45deg); }
+      100% { transform: rotateY(-90deg); }
+    }
+    .hologram {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 600px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(108,92,231,0.8), rgba(0,0,0,0));
+      border: 2px solid rgba(108,92,231,0.8);
+      border-radius: 20px;
+      transform: translate(-50%, -50%) scale(0);
+      animation: hologramEffect 4s ease-in-out forwards;
+    }
+    @keyframes hologramEffect {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+    }
+    /* Weißer Zeichenbereich – drei Canvas-Schichten */
+    .white-drawing-page {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: white;
+      background-color: #ffffff;
+      overflow: hidden;
     }
-    .menu-container {
+    /* Die drei Schichten: Hintergrund, Zeichnung, Vorschau */
+    #backgroundCanvas,
+    #drawingCanvas,
+    #previewCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+    }
+    #backgroundCanvas { z-index: 0; }
+    #drawingCanvas    { z-index: 1; }
+    #previewCanvas    { z-index: 2; pointer-events: none; }
+    /* Pinsel-Button (links oben) */
+    .brush-button {
       position: absolute;
       top: 20px;
       left: 20px;
-      z-index: 10;
-    }
-    .menu {
-      background: white;
-      padding: 10px;
-      border: 2px solid #ccc;
-      border-radius: 5px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      width: 200px;
-    }
-    .toggle-button {
-      position: absolute;
-      top: 50%;
-      left: 10px;
-      transform: translateY(-50%);
-      background: white;
-      border: 2px solid #ccc;
-      padding: 5px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    .color-container {
-      display: flex;
-      gap: 5px;
-    }
-    .color-box {
-      width: 30px;
-      height: 30px;
+      width: 50px;
+      height: 50px;
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid transparent;
+      font-size: 24px;
+      outline: none;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
     }
-    .color-box.selected {
-      border: 3px solid black;
-    }
-    .emoji-container {
+    .brush-button:hover { background-color: #74b9ff; }
+    /* Advanced-Button (oben rechts) */
+    .advanced-button {
       position: absolute;
-      bottom: 20px;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      outline: none;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
+    }
+    .advanced-button:hover { background-color: #74b9ff; }
+    /* Hauptmenü (Menu) – links neben dem Pinsel-Button */
+    .menu {
+      position: absolute;
+      top: 90px;
       left: 20px;
-      background: white;
+      width: 220px;
+      background-color: #ffffff;
+      border: 2px solid #6c5ce7;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: 80vh;
+      z-index: 9999;
+    }
+    .menu button {
+      width: 100%;
+      padding: 10px;
+      background-color: #6c5ce7;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      border-radius: 5px;
+    }
+    .menu button:hover { background-color: #74b9ff; }
+    .menu .size-slider { width: 100%; }
+    .menu .file-upload { width: 100%; }
+    /* Text-Untermenü */
+    #textOptions {
+      margin-top: 10px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    #textOptions label { font-size: 12px; }
+    #textOptions input,
+    #textOptions select {
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 3px;
+      font-size: 12px;
+    }
+    #textOptions p { font-size: 10px; color: #888; margin: 0; }
+    /* OK-Button im Textmodus */
+    #textOkButton {
+      width: 100%;
+      padding: 10px;
+      background-color: #6c5ce7;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      margin-top: 5px;
+    }
+    #textOkButton:hover { background-color: #74b9ff; }
+    /* Container für Hauptwerkzeuge */
+    #mainTools { display: flex; flex-direction: column; gap: 10px; }
+    /* Größe-Slider (im mainTools) */
+    #sizeSliderContainer {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #sizeSliderContainer label { font-size: 12px; }
+    /* Container für Textwerkzeug (mit Rückkehr-Pfeil) */
+    #textTools { display: none; flex-direction: column; gap: 10px; }
+    /* Advanced Tools Menü (oben rechts unter dem Advanced-Button) */
+    #advancedTools {
+      position: absolute;
+      top: 80px;
+      right: 20px;
+      width: 220px;
+      background-color: #ffffff;
+      border: 2px solid #6c5ce7;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+    }
+    #advancedTools button {
+      width: 100%;
+      padding: 10px;
+      background-color: #6c5ce7;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #advancedTools button:hover { background-color: #74b9ff; }
+    /* Scrollbarer Emoji-Balken */
+    .scroll-container {
+      width: 300px;
+      height: 60px;
+      overflow-x: auto;
+      white-space: nowrap;
+      background-color: #fff;
       padding: 5px;
       border: 2px solid #ccc;
       border-radius: 10px;
-      display: flex;
+      cursor: grab;
+      user-select: none;
+      scrollbar-width: none;
+    }
+    .scroll-container::-webkit-scrollbar { display: none; }
+    .scroll-content { display: inline-block; font-size: 40px; padding: 5px; }
+    .emoji {
+      display: inline-block;
+      cursor: pointer;
+      padding: 5px;
+      transition: transform 0.2s ease-in-out;
+      opacity: 0.5;
+    }
+    .emoji:hover { transform: scale(1.3); }
+    .emoji.selected { opacity: 1; }
+    /* Scrollbare Farbauswahl */
+    .color-scroll-container {
+      width: 300px;
+      height: 60px;
       overflow-x: auto;
       white-space: nowrap;
-      width: auto;
-      max-width: 300px;
-    }
-    .emoji {
-      font-size: 24px;
-      cursor: pointer;
+      background-color: #fff;
       padding: 5px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      cursor: grab;
+      user-select: none;
+      scrollbar-width: none;
     }
-    .page-buttons {
-      display: flex;
-      gap: 5px;
-    }
-    .page-buttons button {
-      flex: 1;
-      padding: 5px;
-      border: 1px solid #ccc;
+    .color-scroll-container::-webkit-scrollbar { display: none; }
+    .color-scroll-content { display: inline-block; padding: 5px; }
+    .color-box {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
       cursor: pointer;
-      border-radius: 3px;
-      background: lightgray;
+      margin: 0 5px;
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+      border: 2px solid transparent;
     }
-    .page-buttons button.active {
-      background: #6c5ce7;
-      color: white;
-    }
+    .color-box:hover { transform: scale(1.2); box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    .color-box.selected { border-color: #6c5ce7; border-width: 3px; }
   </style>
 </head>
 <body>
-
-  <div class="canvas-container">
-    <canvas id="canvas1" class="drawingCanvas"></canvas>
-    <canvas id="canvas2" class="drawingCanvas" style="display: none;"></canvas>
-    <canvas id="canvas3" class="drawingCanvas" style="display: none;"></canvas>
-    <canvas id="canvas4" class="drawingCanvas" style="display: none;"></canvas>
-    <canvas id="canvas5" class="drawingCanvas" style="display: none;"></canvas>
+  <!-- Mystisches Tor -->
+  <div class="mystic-gate-container">
+    <div class="gate-door left-door"></div>
+    <div class="gate-door right-door"></div>
+    <div class="hologram"></div>
   </div>
 
-  <div class="menu-container">
-    <div class="menu" id="menu">
-      <button id="brushTool">🖌 Pinsel</button>
-      <button id="eraserTool">🧽 Radiergummi</button>
-      <button id="undoButton">↩️ Rückgängig</button>
-      <button id="redoButton">↪️ Wiederherstellen</button>
-      <button id="clearButton">🗑️ Löschen</button>
-
-      <div class="color-container">
-        <div class="color-box" style="background-color: black;"></div>
-        <div class="color-box" style="background-color: red;"></div>
-        <div class="color-box" style="background-color: blue;"></div>
-        <div class="color-box" style="background-color: green;"></div>
-        <div class="color-box" style="background-color: yellow;"></div>
+  <!-- Weißer Zeichenbereich mit drei Canvas-Schichten -->
+  <div class="white-drawing-page">
+    <!-- Pinsel-Button (links oben) -->
+    <button id="brushButton" class="brush-button">🖌</button>
+    <!-- Advanced-Button (oben rechts) -->
+    <button id="advancedButton" class="advanced-button">🔧</button>
+    <!-- Canvas-Schichten -->
+    <canvas id="backgroundCanvas" class="drawing-canvas"></canvas>
+    <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
+    <canvas id="previewCanvas" class="drawing-canvas" style="pointer-events: none;"></canvas>
+    <!-- Hauptmenü (Menu) -->
+    <div id="menu" class="menu">
+      <div id="mainTools">
+        <div class="color-scroll-container">
+          <div class="color-scroll-content">
+            <div class="color-box" style="background-color: #ff0000;"></div>
+            <div class="color-box" style="background-color: #ff8000;"></div>
+            <div class="color-box" style="background-color: #ffff00;"></div>
+            <div class="color-box" style="background-color: #80ff00;"></div>
+            <div class="color-box" style="background-color: #00ff00;"></div>
+            <div class="color-box" style="background-color: #00ff80;"></div>
+            <div class="color-box" style="background-color: #00ffff;"></div>
+            <div class="color-box" style="background-color: #0080ff;"></div>
+            <div class="color-box" style="background-color: #0000ff;"></div>
+            <div class="color-box" style="background-color: #8000ff;"></div>
+            <div class="color-box" style="background-color: #ff00ff;"></div>
+            <div class="color-box" style="background-color: #ff0080;"></div>
+            <div class="color-box" style="background-color: #000000;"></div>
+            <div class="color-box" style="background-color: #808080;"></div>
+            <div class="color-box" style="background-color: #ffffff; border: 2px solid #ccc;"></div>
+          </div>
+        </div>
+        <button data-tool="brush">Pinsel</button>
+        <button data-tool="pencil">Bleistift</button>
+        <button data-tool="marker">Marker</button>
+        <button data-tool="bucket">Farbeimer</button>
+        <button data-tool="eraser">Radiergummi</button>
+        <button data-tool="emoji">Emoji</button>
+        <button data-tool="text">Text</button>
+        <button data-tool="undo">← Rückgängig</button>
+        <button data-tool="redo">→ Wiederherstellen</button>
+        <div class="scroll-container">
+          <div class="scroll-content">
+            <span class="emoji">😀</span> <span class="emoji">😃</span> <span class="emoji">😄</span>
+            <span class="emoji">😁</span> <span class="emoji">😆</span> <span class="emoji">😅</span>
+            <span class="emoji">😂</span> <span class="emoji">🤣</span> <span class="emoji">😊</span>
+            <span class="emoji">😇</span> <span class="emoji">😉</span> <span class="emoji">😍</span>
+            <span class="emoji">🥰</span> <span class="emoji">😘</span> <span class="emoji">😎</span>
+            <span class="emoji">🤩</span> <span class="emoji">🥳</span> <span class="emoji">🤗</span>
+            <span class="emoji">😜</span> <span class="emoji">🤔</span> <span class="emoji">🧐</span>
+            <span class="emoji">🤓</span> <span class="emoji">🤠</span>
+          </div>
+        </div>
+        <!-- Größe-Slider -->
+        <div id="sizeSliderContainer">
+          <label for="sizeSlider">Größe:</label>
+          <input type="range" id="sizeSlider" class="size-slider" min="1" max="50" value="5">
+        </div>
       </div>
-
-      <label>Größe:</label>
-      <input type="range" id="sizeSlider" min="5" max="50" value="10">
-
-      <div class="page-buttons">
-        <button data-page="1" class="active">1</button>
-        <button data-page="2">2</button>
-        <button data-page="3">3</button>
-        <button data-page="4">4</button>
-        <button data-page="5">5</button>
+      <!-- Container für Textwerkzeug -->
+      <div id="textTools">
+        <button id="backButton" style="width:100%; padding:10px; background-color:#6c5ce7; color:black; border:none; cursor:pointer; font-size:14px; transition: background-color 0.3s ease; border-radius:5px;">
+          ← Hauptmenü
+        </button>
+        <div id="textOptions">
+          <label for="textInput">Text:</label>
+          <input type="text" id="textInput" placeholder="Dein Text">
+          <label for="fontSelect">Font:</label>
+          <select id="fontSelect">
+            <option value="Arial">Arial</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Georgia">Georgia</option>
+          </select>
+          <p>Klicke auf die Leinwand zum Platzieren</p>
+          <button id="textOkButton">OK</button>
+        </div>
       </div>
     </div>
-
-    <button class="toggle-button" id="toggleMenu">⬅️</button>
-  </div>
-
-  <div class="emoji-container">
-    <span class="emoji">😀</span>
-    <span class="emoji">😃</span>
-    <span class="emoji">😄</span>
-    <span class="emoji">😁</span>
-    <span class="emoji">😂</span>
-    <span class="emoji">😎</span>
-    <span class="emoji">🤩</span>
-    <span class="emoji">🥳</span>
+    <!-- Separates Advanced Tools Menü -->
+    <div id="advancedTools" class="menu">
+      <button data-adv="squareSelect">Quadratische Auswahl</button>
+      <button data-adv="freeSelect">Freie Auswahl</button>
+      <button data-adv="moveArea">Bereich verschieben</button>
+      <button data-adv="magicWand">Zauberstab</button>
+      <button data-adv="deleteArea">Bereich löschen</button>
+      <label for="bgUpload" style="font-size:12px;">Hintergrundbild hochladen:</label>
+      <input type="file" id="bgUpload" class="file-upload" accept="image/*">
+      <label for="drawingUpload" style="font-size:12px;">Zeichnungsbild hochladen:</label>
+      <input type="file" id="drawingUpload" class="file-upload" accept="image/*">
+    </div>
   </div>
 
   <script>
-    let activeCanvas = 1;
-    let undoStack = [[]];
-    let redoStack = [[]];
-    let drawing = false;
-    let selectedColor = "black";
-    let selectedSize = 10;
-    let selectedTool = "brush";
-    let scale = 1;
-    let lastDist = 0;
+    // --- Canvas-Elemente und Contexts ---
+    const backgroundCanvas = document.getElementById('backgroundCanvas');
+    const bgCtx = backgroundCanvas.getContext('2d');
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const context = drawingCanvas.getContext('2d');
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewContext = previewCanvas.getContext('2d');
 
-    function switchCanvas(page) {
-      document.querySelectorAll(".drawingCanvas").forEach(canvas => canvas.style.display = "none");
-      document.getElementById(`canvas${page}`).style.display = "block";
-      activeCanvas = page;
+    // --- Größenanpassung der Canvases ---
+    function resizeCanvases() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      [backgroundCanvas, drawingCanvas, previewCanvas].forEach(canvas => {
+        canvas.width = width;
+        canvas.height = height;
+      });
+      bgCtx.fillStyle = "#ffffff";
+      bgCtx.fillRect(0, 0, width, height);
+    }
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+
+    // --- Weitere Elemente ---
+    const brushButton = document.getElementById('brushButton');
+    const advancedButton = document.getElementById('advancedButton');
+    const menu = document.getElementById('menu');
+    const mainTools = document.getElementById('mainTools');
+    const textTools = document.getElementById('textTools');
+    const backButton = document.getElementById('backButton');
+    const textOkButton = document.getElementById('textOkButton');
+    let textConfirmed = false;
+
+    let menuOpen = false;
+    let selectedTool = 'brush';
+    let selectedColor = 'black';
+    let isDrawing = false;
+    let lastX, lastY;
+    let selectedEmoji = null;
+    const undoStack = [];
+    const redoStack = [];
+    let bgImageLoaded = false;
+
+    // --- Touch-Unterstützung & Mausposition ---
+    function getMousePos(canvas, evt) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (evt.touches && evt.touches.length > 0) {
+        clientX = evt.touches[0].clientX;
+        clientY = evt.touches[0].clientY;
+      } else {
+        clientX = evt.clientX;
+        clientY = evt.clientY;
+      }
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
     }
 
-    document.querySelectorAll(".page-buttons button").forEach(button => {
-      button.addEventListener("click", () => {
-        document.querySelector(".page-buttons .active").classList.remove("active");
-        button.classList.add("active");
-        switchCanvas(button.dataset.page);
+    // --- Hintergrundbild hochladen (Advanced Tools) ---
+    const bgUpload = document.getElementById('bgUpload');
+    bgUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+          bgCtx.drawImage(img, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+          bgImageLoaded = true;
+        };
+      }
+    });
+
+    // --- Advanced Tools Menü (oben rechts) ---
+    const advancedTools = document.getElementById('advancedTools');
+    advancedButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      advancedTools.style.display = (advancedTools.style.display === 'none' || advancedTools.style.display === '') ? 'flex' : 'none';
+    });
+
+    // --- Menü öffnen/schließen ---
+    brushButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.style.display = menuOpen ? 'none' : 'flex';
+      menuOpen = !menuOpen;
+    });
+    menu.addEventListener('click', (e) => { e.stopPropagation(); });
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && !brushButton.contains(e.target) && !advancedButton.contains(e.target)) {
+        menu.style.display = 'none';
+        advancedTools.style.display = 'none';
+        menuOpen = false;
+      }
+    });
+
+    // --- Back-Button im Textmodus ---
+    backButton.addEventListener('click', () => {
+      menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+      mainTools.style.display = 'flex';
+      textTools.style.display = 'none';
+      selectedTool = 'brush';
+    });
+
+    // --- Werkzeug-Buttons im Hauptmenü ---
+    menu.querySelectorAll('[data-tool]').forEach(button => {
+      button.addEventListener('click', () => {
+        menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+        const tool = button.dataset.tool;
+        if (tool === 'text') {
+          mainTools.style.display = 'none';
+          textTools.style.display = 'flex';
+          selectedTool = 'text';
+        } else {
+          mainTools.style.display = 'flex';
+          textTools.style.display = 'none';
+          selectedTool = tool;
+          if ('ontouchstart' in window) {
+            menu.style.display = 'none';
+            menuOpen = false;
+          }
+        }
       });
     });
+
+    // --- OK-Button im Textmodus ---
+    textOkButton.addEventListener('click', () => {
+      const textVal = document.getElementById('textInput').value.trim();
+      if (textVal !== "") {
+        textConfirmed = true;
+        mainTools.style.display = 'flex';
+        textTools.style.display = 'none';
+        menu.style.display = 'none';
+        menuOpen = false;
+      } else {
+        alert("Bitte Text eingeben.");
+      }
+    });
+
+    // --- Farbauswahl ---
+    document.querySelectorAll('.color-box').forEach(box => {
+      box.addEventListener('click', () => {
+        document.querySelector('.color-box.selected')?.classList.remove('selected');
+        box.classList.add('selected');
+        selectedColor = getComputedStyle(box).backgroundColor;
+      });
+    });
+
+    // --- Emoji-Auswahl ---
+    document.querySelectorAll('.emoji').forEach(emoji => {
+      emoji.addEventListener('click', () => {
+        document.querySelector('.emoji.selected')?.classList.remove('selected');
+        emoji.classList.add('selected');
+        selectedEmoji = emoji.textContent;
+        selectedTool = 'emoji';
+        if ('ontouchstart' in window) {
+          menu.style.display = 'none';
+          menuOpen = false;
+        }
+      });
+    });
+
+    // --- Erweiterte Funktionen (Advanced Tools) ---
+    document.querySelectorAll('[data-adv]').forEach(button => {
+      button.addEventListener('click', () => {
+        const adv = button.dataset.adv;
+        if (adv === 'squareSelect') {
+          selectedTool = 'squareSelect';
+          alert("Quadratische Auswahl aktiviert. Ziehe, um den Bereich auszuwählen.");
+          startSelection();
+        } else if (adv === 'freeSelect') {
+          selectedTool = 'freeSelect';
+          alert("Freie Auswahl aktiviert. (Funktion noch nicht vollständig implementiert)");
+        } else if (adv === 'moveArea') {
+          if (selectionRect) {
+            selectedTool = 'moveArea';
+            alert("Bereich verschieben aktiviert. Tippe und ziehe innerhalb des ausgewählten Bereichs.");
+            startMoveSelection();
+          } else {
+            alert("Bitte zuerst einen Bereich auswählen.");
+          }
+        } else if (adv === 'magicWand') {
+          selectedTool = 'magicWand';
+          alert("Zauberstabfunktion aktiviert. (Stub – Funktion nicht vollständig implementiert)");
+        } else if (adv === 'deleteArea') {
+          if (selectionRect) {
+            context.clearRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+            selectionRect = null;
+            alert("Ausgewählter Bereich wurde gelöscht.");
+          } else {
+            alert("Kein Bereich ausgewählt.");
+          }
+        }
+        if ('ontouchstart' in window) {
+          advancedTools.style.display = 'none';
+        }
+      });
+    });
+
+    // --- File-Upload für Zeichnungsbilder (Advanced Tools) ---
+    const drawingUpload = document.getElementById('drawingUpload');
+    drawingUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          context.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+          saveState();
+        };
+      }
+    });
+
+    // --- Gemeinsamer Canvas-Klick-Handler ---
+    drawingCanvas.addEventListener('click', (e) => {
+      if (selectedTool === 'emoji' && selectedEmoji) {
+        placeEmoji(e);
+        if ('ontouchstart' in window) { menu.style.display = 'none'; menuOpen = false; }
+      } else if (selectedTool === 'text') {
+        if (textConfirmed) {
+          placeText(e);
+        } else {
+          alert("Bitte zuerst OK drücken, wenn du den Text fertig geschrieben hast.");
+        }
+      } else if (selectedTool === 'bucket') {
+        bucketFill(e);
+      } else if (selectedTool === 'squareSelect') {
+        startSelection();
+      } else if (selectedTool === 'moveArea') {
+        startMoveSelection();
+      }
+    });
+
+    // --- Touch-Events für Zeichnungs-Canvas ---
+    drawingCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+    drawingCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    drawingCanvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (selectedTool === 'emoji' && selectedEmoji) {
+        placeEmoji(e);
+        if ('ontouchstart' in window) { 
+          menu.style.display = 'none';
+          menuOpen = false;
+        }
+      } else {
+        stopDraw();
+      }
+    });
+    // --- Maus-Events für Zeichnungs-Canvas ---
+    drawingCanvas.addEventListener('mousedown', startDraw);
+    drawingCanvas.addEventListener('mousemove', draw);
+    drawingCanvas.addEventListener('mouseup', stopDraw);
+
+    function startDraw(e) {
+      if (['emoji','text','bucket','squareSelect','moveArea'].includes(selectedTool)) return;
+      isDrawing = true;
+      const pos = getMousePos(drawingCanvas, e);
+      [lastX, lastY] = [pos.x, pos.y];
+      saveState();
+    }
+
+    function draw(e) {
+      if (!isDrawing || ['emoji','text','bucket','squareSelect','moveArea'].includes(selectedTool)) return;
+      const pos = getMousePos(drawingCanvas, e);
+      let ctxToUse = context;
+      if (selectedTool === 'eraser' && bgImageLoaded) { ctxToUse = bgCtx; }
+      ctxToUse.lineWidth = document.getElementById('sizeSlider').value;
+      ctxToUse.lineCap = 'round';
+      if (selectedTool === 'brush') {
+        ctxToUse.globalAlpha = 1;
+        ctxToUse.strokeStyle = selectedColor;
+      } else if (selectedTool === 'marker') {
+        ctxToUse.globalAlpha = 0.5;
+        ctxToUse.strokeStyle = selectedColor;
+      } else if (selectedTool === 'pencil') {
+        ctxToUse.lineWidth = 1;
+        ctxToUse.globalAlpha = 1;
+        ctxToUse.strokeStyle = selectedColor;
+      } else if (selectedTool === 'eraser') {
+        ctxToUse.globalCompositeOperation = 'destination-out';
+        ctxToUse.strokeStyle = 'rgba(0,0,0,1)';
+      }
+      ctxToUse.beginPath();
+      ctxToUse.moveTo(lastX, lastY);
+      ctxToUse.lineTo(pos.x, pos.y);
+      ctxToUse.stroke();
+      [lastX, lastY] = [pos.x, pos.y];
+      if (selectedTool === 'eraser') { ctxToUse.globalCompositeOperation = 'source-over'; }
+    }
+
+    function stopDraw() { isDrawing = false; }
+
+    function placeEmoji(e) {
+      const pos = getMousePos(drawingCanvas, e);
+      const size = parseInt(document.getElementById('sizeSlider').value);
+      // Emoji-freundliche Schriftarten
+      context.font = `${size * 2}px "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(selectedEmoji, pos.x, pos.y);
+      saveState();
+    }
+
+    function placeText(e) {
+      const pos = getMousePos(drawingCanvas, e);
+      const size = parseInt(document.getElementById('sizeSlider').value);
+      const text = document.getElementById('textInput').value;
+      const fontSelect = document.getElementById('fontSelect').value;
+      if (!text) return;
+      context.font = `${size * 2}px ${fontSelect}`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, pos.x, pos.y);
+      saveState();
+    }
+
+    // --- Bucket-Funktion auf dem Hintergrund-Canvas ---
+    function bucketFill(e) {
+      const pos = getMousePos(backgroundCanvas, e);
+      const x = Math.floor(pos.x);
+      const y = Math.floor(pos.y);
+      floodFill(bgCtx, x, y, selectedColor);
+    }
+
+    function floodFill(ctx, startX, startY, fillColor) {
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      const startIdx = (startY * width + startX) * 4;
+      const targetColor = [data[startIdx], data[startIdx+1], data[startIdx+2], data[startIdx+3]];
+      const fillColorArr = parseRGB(fillColor);
+      if (colorsMatch(targetColor, fillColorArr)) return;
+      const stack = [[startX, startY]];
+      while(stack.length) {
+        const [x, y] = stack.pop();
+        const idx = (y * width + x) * 4;
+        if (!colorsMatch([data[idx], data[idx+1], data[idx+2], data[idx+3]], targetColor)) continue;
+        data[idx] = fillColorArr[0];
+        data[idx+1] = fillColorArr[1];
+        data[idx+2] = fillColorArr[2];
+        data[idx+3] = fillColorArr[3];
+        if (x > 0) stack.push([x-1, y]);
+        if (x < width - 1) stack.push([x+1, y]);
+        if (y > 0) stack.push([x, y-1]);
+        if (y < height - 1) stack.push([x, y+1]);
+      }
+      ctx.putImageData(imageData, 0, 0);
+    }
+    function colorsMatch(c1, c2) {
+      return c1[0] === c2[0] && c1[1] === c2[1] &&
+             c1[2] === c2[2] && c1[3] === c2[3];
+    }
+    function parseRGB(colorStr) {
+      const nums = colorStr.match(/\d+/g).map(Number);
+      if (nums.length === 3) nums.push(255);
+      return nums;
+    }
 
     function saveState() {
-      const canvas = document.getElementById(`canvas${activeCanvas}`);
-      undoStack[activeCanvas - 1].push(canvas.toDataURL());
-      redoStack[activeCanvas - 1] = [];
+      undoStack.push(drawingCanvas.toDataURL());
+      redoStack.length = 0;
     }
 
-    document.getElementById("undoButton").addEventListener("click", () => {
-      if (undoStack[activeCanvas - 1].length > 1) {
-        redoStack[activeCanvas - 1].push(undoStack[activeCanvas - 1].pop());
+    menu.querySelector('[data-tool="undo"]').addEventListener('click', () => {
+      if (undoStack.length > 1) {
+        redoStack.push(undoStack.pop());
         const img = new Image();
-        img.src = undoStack[activeCanvas - 1][undoStack[activeCanvas - 1].length - 1];
+        img.src = undoStack[undoStack.length - 1];
         img.onload = () => {
-          const ctx = document.getElementById(`canvas${activeCanvas}`).getContext("2d");
-          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-          ctx.drawImage(img, 0, 0);
+          context.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+          context.drawImage(img, 0, 0);
+        };
+      }
+    });
+    menu.querySelector('[data-tool="redo"]').addEventListener('click', () => {
+      if (redoStack.length > 0) {
+        const img = new Image();
+        img.src = redoStack.pop();
+        img.onload = () => {
+          context.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+          context.drawImage(img, 0, 0);
+        };
+        undoStack.push(img.src);
+      }
+    });
+    menu.querySelector('.file-upload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          context.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+          saveState();
         };
       }
     });
 
-    document.getElementById("redoButton").addEventListener("click", () => {
-      if (redoStack[activeCanvas - 1].length > 0) {
-        const img = new Image();
-        img.src = redoStack[activeCanvas - 1].pop();
-        img.onload = () => {
-          const ctx = document.getElementById(`canvas${activeCanvas}`).getContext("2d");
-          ctx.drawImage(img, 0, 0);
-        };
-        undoStack[activeCanvas - 1].push(img.src);
-      }
+    // --- Drag-Scrolling für Emoji- und Farbauswahl ---
+    let isDown = false, startX, scrollLeft;
+    document.querySelector(".scroll-container").addEventListener("mousedown", (e) => {
+      isDown = true;
+      startX = e.pageX - document.querySelector(".scroll-container").offsetLeft;
+      scrollLeft = document.querySelector(".scroll-container").scrollLeft;
+    });
+    document.querySelector(".scroll-container").addEventListener("mouseleave", () => { isDown = false; });
+    document.querySelector(".scroll-container").addEventListener("mouseup", () => { isDown = false; });
+    document.querySelector(".scroll-container").addEventListener("mousemove", (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - document.querySelector(".scroll-container").offsetLeft;
+      const walk = (x - startX) * 2;
+      document.querySelector(".scroll-container").scrollLeft = scrollLeft - walk;
+    });
+    document.querySelector(".color-scroll-container").addEventListener("mousedown", (e) => {
+      isDown = true;
+      startX = e.pageX - document.querySelector(".color-scroll-container").offsetLeft;
+      scrollLeft = document.querySelector(".color-scroll-container").scrollLeft;
+    });
+    document.querySelector(".color-scroll-container").addEventListener("mouseleave", () => { isDown = false; });
+    document.querySelector(".color-scroll-container").addEventListener("mouseup", () => { isDown = false; });
+    document.querySelector(".color-scroll-container").addEventListener("mousemove", (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - document.querySelector(".color-scroll-container").offsetLeft;
+      const walk = (x - startX) * 2;
+      document.querySelector(".color-scroll-container").scrollLeft = scrollLeft - walk;
     });
 
-    document.querySelectorAll(".emoji").forEach(emoji => {
-      emoji.addEventListener("click", () => {
-        const ctx = document.getElementById(`canvas${activeCanvas}`).getContext("2d");
-        ctx.font = "40px Arial";
-        ctx.fillText(emoji.textContent, Math.random() * ctx.canvas.width, Math.random() * ctx.canvas.height);
-      });
+    menu.querySelector('[data-tool="bucket"]').addEventListener('click', () => {
+      selectedTool = 'bucket';
     });
+
+    // --- Erweiterte Auswahlfunktionen (Advanced Tools) ---
+    let selectionRect = null;
+    let selecting = false;
+    let selectionStart = null;
+    let movingSelection = false;
+    let moveOffset = { x: 0, y: 0 };
+    let selectionImageData = null;
+    function startSelection() {
+      selecting = true;
+      selectionStart = null;
+      selectionRect = null;
+      previewCanvas.addEventListener('mousedown', selectionMouseDown);
+      previewCanvas.addEventListener('touchstart', selectionMouseDown);
+    }
+    function selectionMouseDown(e) {
+      selectionStart = getMousePos(previewCanvas, e);
+      previewCanvas.addEventListener('mousemove', updateSelectionPreview);
+      previewCanvas.addEventListener('touchmove', updateSelectionPreview);
+      previewCanvas.addEventListener('mouseup', endSelection);
+      previewCanvas.addEventListener('touchend', endSelection);
+    }
+    function updateSelectionPreview(e) {
+      const pos = getMousePos(previewCanvas, e);
+      const x = Math.min(selectionStart.x, pos.x);
+      const y = Math.min(selectionStart.y, pos.y);
+      const width = Math.abs(pos.x - selectionStart.x);
+      const height = Math.abs(pos.y - selectionStart.y);
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewContext.strokeStyle = 'red';
+      previewContext.lineWidth = 2;
+      previewContext.strokeRect(x, y, width, height);
+    }
+    function endSelection(e) {
+      const pos = getMousePos(previewCanvas, e);
+      const x = Math.min(selectionStart.x, pos.x);
+      const y = Math.min(selectionStart.y, pos.y);
+      const width = Math.abs(pos.x - selectionStart.x);
+      const height = Math.abs(pos.y - selectionStart.y);
+      selectionRect = { x, y, width, height };
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewCanvas.removeEventListener('mousemove', updateSelectionPreview);
+      previewCanvas.removeEventListener('touchmove', updateSelectionPreview);
+      previewCanvas.removeEventListener('mouseup', endSelection);
+      previewCanvas.removeEventListener('touchend', endSelection);
+      alert("Bereich ausgewählt.");
+    }
+    function startMoveSelection() {
+      if (!selectionRect) {
+        alert("Kein Bereich ausgewählt.");
+        return;
+      }
+      const pos = getMousePos(drawingCanvas, event);
+      if (pos.x >= selectionRect.x && pos.x <= selectionRect.x + selectionRect.width &&
+          pos.y >= selectionRect.y && pos.y <= selectionRect.y + selectionRect.height) {
+        movingSelection = true;
+        moveOffset.x = pos.x - selectionRect.x;
+        moveOffset.y = pos.y - selectionRect.y;
+        selectionImageData = context.getImageData(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+        drawingCanvas.addEventListener('mousemove', moveSelection);
+        drawingCanvas.addEventListener('mouseup', endMoveSelection);
+      } else {
+        alert("Bitte innerhalb des ausgewählten Bereichs klicken.");
+      }
+    }
+    function moveSelection(e) {
+      if (!movingSelection) return;
+      const pos = getMousePos(drawingCanvas, e);
+      const newX = pos.x - moveOffset.x;
+      const newY = pos.y - moveOffset.y;
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewContext.putImageData(selectionImageData, newX, newY);
+    }
+    function endMoveSelection(e) {
+      if (!movingSelection) return;
+      const pos = getMousePos(drawingCanvas, e);
+      const newX = pos.x - moveOffset.x;
+      const newY = pos.y - moveOffset.y;
+      context.clearRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+      context.putImageData(selectionImageData, newX, newY);
+      selectionRect = { x: newX, y: newY, width: selectionRect.width, height: selectionRect.height };
+      movingSelection = false;
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      drawingCanvas.removeEventListener('mousemove', moveSelection);
+      drawingCanvas.removeEventListener('mouseup', endMoveSelection);
+      alert("Bereich verschoben.");
+    }
+    // Zauberstab (Stub)
+    function activateMagicWand() {
+      alert("Zauberstabfunktion ist noch nicht implementiert.");
+    }
+
+    // --- Preview: Touch- & Maus-Events für die Vorschau ---
+    function drawTransparentPreview(e) {
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      const pos = getMousePos(previewCanvas, e);
+      const size = parseInt(document.getElementById('sizeSlider').value);
+      previewContext.globalAlpha = 0.5;
+      if (selectedTool === 'emoji' && selectedEmoji) {
+        previewContext.font = `${size * 2}px "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif`;
+        previewContext.textAlign = 'center';
+        previewContext.textBaseline = 'middle';
+        previewContext.fillText(selectedEmoji, pos.x, pos.y);
+      } else if (selectedTool === 'text') {
+        const text = document.getElementById('textInput').value;
+        const fontSelect = document.getElementById('fontSelect').value;
+        if (text) {
+          previewContext.font = `${size * 2}px ${fontSelect}`;
+          previewContext.textAlign = 'center';
+          previewContext.textBaseline = 'middle';
+          previewContext.fillText(text, pos.x, pos.y);
+        }
+      } else {
+        previewContext.fillStyle = selectedColor;
+        previewContext.beginPath();
+        previewContext.arc(pos.x, pos.y, size / 2, 0, 2 * Math.PI);
+        previewContext.fill();
+      }
+      previewContext.globalAlpha = 1;
+    }
+    previewCanvas.addEventListener('mousemove', drawTransparentPreview);
+    previewCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawTransparentPreview(e); });
   </script>
-
 </body>
 </html>
