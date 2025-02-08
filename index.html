@@ -136,36 +136,20 @@
     <button class="toggle-button" id="toggleMenu">⬅️</button>
   </div>
 
-  <!-- Emoji-Auswahl (Verschwindet mit Menü) -->
-  <div class="emoji-container" id="emojiContainer">
-    <span class="emoji">😀</span>
-    <span class="emoji">😃</span>
-    <span class="emoji">😄</span>
-    <span class="emoji">😁</span>
-    <span class="emoji">😆</span>
-    <span class="emoji">😅</span>
-    <span class="emoji">😂</span>
-    <span class="emoji">🤣</span>
-    <span class="emoji">😊</span>
-    <span class="emoji">😍</span>
-    <span class="emoji">🥰</span>
-    <span class="emoji">😎</span>
-    <span class="emoji">🤩</span>
-    <span class="emoji">🥳</span>
-  </div>
-
   <script>
     const canvas = document.getElementById("drawingCanvas");
     const ctx = canvas.getContext("2d");
     const menu = document.getElementById("menu");
-    const emojiContainer = document.getElementById("emojiContainer");
     const toggleButton = document.getElementById("toggleMenu");
+
     let selectedTool = "brush";
-    let selectedEmoji = null;
     let selectedColor = "black";
     let brushSize = 10;
     let isDrawing = false;
     let lastX, lastY;
+    let scale = 1;
+    let translateX = 0, translateY = 0;
+    let lastDistance = null;
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -177,7 +161,6 @@
     // Menü ein-/ausblenden
     toggleButton.addEventListener("click", () => {
       menu.classList.toggle("hidden");
-      emojiContainer.classList.toggle("hidden");
       toggleButton.textContent = menu.classList.contains("hidden") ? "➡️" : "⬅️";
       toggleButton.classList.toggle("hidden");
     });
@@ -201,25 +184,24 @@
       brushSize = e.target.value;
     });
 
-    // Emojis auswählen
-    document.querySelectorAll(".emoji").forEach(emoji => {
-      emoji.addEventListener("click", () => {
-        document.querySelector(".emoji.selected")?.classList.remove("selected");
-        emoji.classList.add("selected");
-        selectedEmoji = emoji.textContent;
-        selectedTool = "emoji";
-      });
-    });
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left - translateX) / scale,
+        y: (e.clientY - rect.top - translateY) / scale
+      };
+    }
 
     function startDraw(e) {
+      if (e.touches && e.touches.length === 2) return;
       isDrawing = true;
-      const pos = getMousePos(e);
+      const pos = getMousePos(e.touches ? e.touches[0] : e);
       [lastX, lastY] = [pos.x, pos.y];
     }
 
     function draw(e) {
-      if (!isDrawing) return;
-      const pos = getMousePos(e);
+      if (!isDrawing || (e.touches && e.touches.length === 2)) return;
+      const pos = getMousePos(e.touches ? e.touches[0] : e);
       ctx.lineWidth = brushSize;
       ctx.lineCap = "round";
       ctx.strokeStyle = selectedTool === "eraser" ? "white" : selectedColor;
@@ -232,9 +214,27 @@
 
     function stopDraw() { isDrawing = false; }
 
+    function handleZoom(e) {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (lastDistance) {
+          const deltaScale = distance / lastDistance;
+          scale *= deltaScale;
+          ctx.setTransform(scale, 0, 0, scale, translateX, translateY);
+        }
+
+        lastDistance = distance;
+      }
+    }
+
     canvas.addEventListener("pointerdown", startDraw);
     canvas.addEventListener("pointermove", draw);
     canvas.addEventListener("pointerup", stopDraw);
+    canvas.addEventListener("touchmove", handleZoom, { passive: false });
+
   </script>
 
 </body>
