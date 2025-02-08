@@ -27,10 +27,15 @@
       height: 100%;
       touch-action: none;
     }
-    .menu {
+    .menu-container {
       position: absolute;
       top: 20px;
       left: 20px;
+      display: flex;
+      align-items: center;
+      z-index: 10;
+    }
+    .menu {
       background: white;
       padding: 10px;
       border: 2px solid #ccc;
@@ -39,25 +44,23 @@
       flex-direction: column;
       gap: 10px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      z-index: 10;
+      transition: transform 0.3s ease-in-out;
     }
-    .menu button {
-      padding: 10px;
-      font-size: 14px;
+    .menu.hidden {
+      transform: translateX(-150%);
+    }
+    .toggle-button {
+      background: white;
+      border: 2px solid #ccc;
+      padding: 5px;
       cursor: pointer;
-      border: none;
-      background-color: #6c5ce7;
-      color: white;
       border-radius: 5px;
-      transition: background 0.3s;
-    }
-    .menu button:hover {
-      background: #74b9ff;
+      margin-left: 5px;
     }
     .emoji-container {
       position: absolute;
       top: 20px;
-      left: 250px; /* Direkt neben dem Menü */
+      left: 250px;
       background: white;
       padding: 5px;
       border: 2px solid #ccc;
@@ -106,29 +109,34 @@
 
   <canvas id="drawingCanvas"></canvas>
 
-  <!-- Menü für Werkzeuge -->
-  <div class="menu">
-    <button id="brushTool">🖌 Pinsel</button>
-    <button id="pencilTool">✏️ Bleistift</button>
-    <button id="eraserTool">🧽 Radiergummi</button>
-    <button id="undoButton">↩️ Rückgängig</button>
-    <button id="clearButton">🗑️ Löschen</button>
+  <!-- Menü mit Pfeil-Button -->
+  <div class="menu-container">
+    <div class="menu" id="menu">
+      <button id="brushTool">🖌 Pinsel</button>
+      <button id="pencilTool">✏️ Bleistift</button>
+      <button id="eraserTool">🧽 Radiergummi</button>
+      <button id="undoButton">↩️ Rückgängig</button>
+      <button id="clearButton">🗑️ Löschen</button>
 
-    <!-- Farbauswahl -->
-    <div class="color-container">
-      <div class="color-box" style="background-color: black;"></div>
-      <div class="color-box" style="background-color: red;"></div>
-      <div class="color-box" style="background-color: blue;"></div>
-      <div class="color-box" style="background-color: green;"></div>
-      <div class="color-box" style="background-color: yellow;"></div>
+      <!-- Farbauswahl -->
+      <div class="color-container">
+        <div class="color-box" style="background-color: black;"></div>
+        <div class="color-box" style="background-color: red;"></div>
+        <div class="color-box" style="background-color: blue;"></div>
+        <div class="color-box" style="background-color: green;"></div>
+        <div class="color-box" style="background-color: yellow;"></div>
+      </div>
+
+      <!-- Größe anpassen -->
+      <label>Größe:</label>
+      <input type="range" id="sizeSlider" min="5" max="50" value="10">
     </div>
 
-    <!-- Größe anpassen -->
-    <label>Größe:</label>
-    <input type="range" id="sizeSlider" min="5" max="50" value="10">
+    <!-- Menü-Pfeil -->
+    <button class="toggle-button" id="toggleMenu">⬅️</button>
   </div>
 
-  <!-- Emoji-Auswahl (Jetzt neben dem Menü!) -->
+  <!-- Emoji-Auswahl (Neben dem Menü) -->
   <div class="emoji-container">
     <span class="emoji">😀</span>
     <span class="emoji">😃</span>
@@ -149,6 +157,8 @@
   <script>
     const canvas = document.getElementById("drawingCanvas");
     const ctx = canvas.getContext("2d");
+    const menu = document.getElementById("menu");
+    const toggleButton = document.getElementById("toggleMenu");
     let selectedTool = "brush";
     let selectedEmoji = null;
     let selectedColor = "black";
@@ -162,6 +172,12 @@
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
+
+    // Menü ein-/ausblenden
+    toggleButton.addEventListener("click", () => {
+      menu.classList.toggle("hidden");
+      toggleButton.textContent = menu.classList.contains("hidden") ? "➡️" : "⬅️";
+    });
 
     // Werkzeuge auswählen
     document.getElementById("brushTool").addEventListener("click", () => selectedTool = "brush");
