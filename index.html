@@ -26,6 +26,32 @@
       height: 100%;
       touch-action: none;
     }
+    .menu {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: white;
+      padding: 10px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .menu button {
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      background-color: #6c5ce7;
+      color: white;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+    .menu button:hover {
+      background: #74b9ff;
+    }
     .scroll-container {
       position: absolute;
       bottom: 20px;
@@ -61,6 +87,19 @@
 
   <canvas id="drawingCanvas"></canvas>
 
+  <!-- Hauptmenü -->
+  <div class="menu">
+    <button id="brushTool">🖌 Pinsel</button>
+    <button id="pencilTool">✏️ Bleistift</button>
+    <button id="markerTool">🖊 Marker</button>
+    <button id="bucketTool">🪣 Farbeimer</button>
+    <button id="eraserTool">🧽 Radiergummi</button>
+    <button id="textTool">📝 Text</button>
+    <button id="undoButton">↩️ Rückgängig</button>
+    <button id="redoButton">↪️ Wiederherstellen</button>
+  </div>
+
+  <!-- Emoji-Auswahl -->
   <div class="scroll-container">
     <span class="emoji">😀</span>
     <span class="emoji">😃</span>
@@ -81,6 +120,7 @@
   <script>
     const canvas = document.getElementById("drawingCanvas");
     const ctx = canvas.getContext("2d");
+    let selectedTool = "brush";
     let selectedEmoji = null;
 
     function resizeCanvas() {
@@ -90,26 +130,56 @@
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
+    // Werkzeuge auswählen
+    document.getElementById("brushTool").addEventListener("click", () => selectedTool = "brush");
+    document.getElementById("pencilTool").addEventListener("click", () => selectedTool = "pencil");
+    document.getElementById("markerTool").addEventListener("click", () => selectedTool = "marker");
+    document.getElementById("bucketTool").addEventListener("click", () => selectedTool = "bucket");
+    document.getElementById("eraserTool").addEventListener("click", () => selectedTool = "eraser");
+    document.getElementById("textTool").addEventListener("click", () => selectedTool = "text");
+
     // Emojis auswählen
     document.querySelectorAll(".emoji").forEach(emoji => {
       emoji.addEventListener("click", () => {
         document.querySelector(".emoji.selected")?.classList.remove("selected");
         emoji.classList.add("selected");
         selectedEmoji = emoji.textContent;
+        selectedTool = "emoji";
       });
     });
 
     // Einfügen eines Emojis mit nur einem Finger-Tap
     canvas.addEventListener("pointerdown", (e) => {
-      if (!selectedEmoji) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      ctx.font = "50px Arial";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(selectedEmoji, x, y);
+
+      if (selectedTool === "emoji" && selectedEmoji) {
+        ctx.font = "50px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(selectedEmoji, x, y);
+      } 
+      else if (selectedTool === "brush") {
+        startDraw(x, y);
+      }
     });
+
+    function startDraw(x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "black";
+      ctx.fill();
+    }
+
+    document.getElementById("undoButton").addEventListener("click", () => {
+      // Funktion für "Rückgängig"
+    });
+
+    document.getElementById("redoButton").addEventListener("click", () => {
+      // Funktion für "Wiederherstellen"
+    });
+
   </script>
 
 </body>
