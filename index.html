@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-  <title>Zeichnen mit mehreren Blättern</title>
+  <title>Zeichnen mit Emojis & mehreren Blättern</title>
   <style>
     body, html {
       margin: 0;
@@ -187,7 +187,7 @@
   </div>
 
   <!-- Emoji-Scrollbereich -->
-  <div class="emoji-container">
+  <div class="emoji-container" id="emojiContainer">
     <span class="emoji">😀</span>
     <span class="emoji">😃</span>
     <span class="emoji">😄</span>
@@ -206,40 +206,25 @@
     <span class="emoji">🤩</span>
     <span class="emoji">🥳</span>
     <span class="emoji">🤗</span>
-    <span class="emoji">😜</span>
-    <span class="emoji">🤔</span>
-    <span class="emoji">🧐</span>
-    <span class="emoji">🤓</span>
-    <span class="emoji">🤠</span>
   </div>
 
   <script>
-    const canvases = document.querySelectorAll(".drawingCanvas");
-    let currentCanvas = canvases[0];
-    let ctx = currentCanvas.getContext("2d");
+    const ctx = document.getElementById("canvas1").getContext("2d");
 
     document.getElementById("clearButton").addEventListener("click", () => {
-      ctx.clearRect(0, 0, currentCanvas.width, currentCanvas.height);
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     });
 
     document.querySelectorAll(".emoji").forEach(emoji => {
-      emoji.addEventListener("click", () => {
+      emoji.addEventListener("click", (e) => {
         ctx.font = "40px Arial";
-        ctx.fillText(emoji.textContent, Math.random() * currentCanvas.width, Math.random() * currentCanvas.height);
+        ctx.fillText(emoji.textContent, Math.random() * ctx.canvas.width, Math.random() * ctx.canvas.height);
       });
     });
 
-    // Zeichenflächen wechseln
-    document.querySelectorAll(".page-buttons button").forEach(button => {
-      button.addEventListener("click", () => {
-        document.querySelector(".page-buttons .active")?.classList.remove("active");
-        button.classList.add("active");
-
-        canvases.forEach(canvas => canvas.style.display = "none");
-        currentCanvas = document.getElementById(`canvas${button.dataset.page}`);
-        currentCanvas.style.display = "block";
-        ctx = currentCanvas.getContext("2d");
-      });
+    document.getElementById("toggleMenu").addEventListener("click", () => {
+      document.getElementById("menu").classList.toggle("hidden");
+      document.getElementById("emojiContainer").classList.toggle("hidden");
     });
   </script>
 
