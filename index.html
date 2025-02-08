@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
   <title>Mystisches Modernes Design mit Weißer Fläche</title>
   <style>
     /* Basisstyles */
@@ -78,6 +78,7 @@
       top: 0;
       left: 0;
       display: block;
+      touch-action: none; /* Neu: Standard-Touch-Aktionen deaktivieren */
     }
     #backgroundCanvas { z-index: 0; }
     #drawingCanvas    { z-index: 1; }
