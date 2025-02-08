@@ -78,7 +78,7 @@
       top: 0;
       left: 0;
       display: block;
-      touch-action: none; /* Neu: Standard-Touch-Aktionen deaktivieren */
+      touch-action: none;
     }
     #backgroundCanvas { z-index: 0; }
     #drawingCanvas    { z-index: 1; }
@@ -319,7 +319,7 @@
         <button data-tool="marker">Marker</button>
         <button data-tool="bucket">Farbeimer</button>
         <button data-tool="eraser">Radiergummi</button>
-        <button data-tool="emoji">Emoji</button>
+        <!-- Der Emoji-Button wurde entfernt -->
         <button data-tool="text">Text</button>
         <button data-tool="undo">← Rückgängig</button>
         <button data-tool="redo">→ Wiederherstellen</button>
@@ -525,7 +525,7 @@
       });
     });
 
-    // --- Emoji-Auswahl ---
+    // --- Emoji-Auswahl im Scroll-Bereich ---
     document.querySelectorAll('.emoji').forEach(emoji => {
       emoji.addEventListener('click', () => {
         document.querySelector('.emoji.selected')?.classList.remove('selected');
