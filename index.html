@@ -101,7 +101,7 @@
       z-index: 10000;
     }
     .brush-button:hover { background-color: #74b9ff; }
-    /* Advanced-Button (als eigenständiges Element, oben rechts) */
+    /* Advanced-Button (oben rechts) */
     .advanced-button {
       position: absolute;
       top: 20px;
@@ -182,7 +182,7 @@
     #textOkButton:hover { background-color: #74b9ff; }
     /* Container für Hauptwerkzeuge */
     #mainTools { display: flex; flex-direction: column; gap: 10px; }
-    /* Größe-Slider zurückbringen (hier in mainTools) */
+    /* Größe-Slider (im mainTools) */
     #sizeSliderContainer {
       display: flex;
       align-items: center;
@@ -191,7 +191,7 @@
     #sizeSliderContainer label { font-size: 12px; }
     /* Container für Textwerkzeug (mit Rückkehr-Pfeil) */
     #textTools { display: none; flex-direction: column; gap: 10px; }
-    /* Advanced Tools Menü (separat, oben rechts unter dem Advanced-Button) */
+    /* Advanced Tools Menü (oben rechts unter dem Advanced-Button) */
     #advancedTools {
       position: absolute;
       top: 80px;
@@ -334,7 +334,7 @@
             <span class="emoji">🤓</span> <span class="emoji">🤠</span>
           </div>
         </div>
-        <!-- Größe-Slider zurück (Size Slider) -->
+        <!-- Größe-Slider -->
         <div id="sizeSliderContainer">
           <label for="sizeSlider">Größe:</label>
           <input type="range" id="sizeSlider" class="size-slider" min="1" max="50" value="5">
@@ -361,7 +361,7 @@
         </div>
       </div>
     </div>
-    <!-- Separates Advanced Tools Menü (Advanced Tools) -->
+    <!-- Separates Advanced Tools Menü -->
     <div id="advancedTools" class="menu">
       <button data-adv="squareSelect">Quadratische Auswahl</button>
       <button data-adv="freeSelect">Freie Auswahl</button>
@@ -449,7 +449,7 @@
       }
     });
 
-    // --- Advanced Tools Menü (separat, oben rechts) ---
+    // --- Advanced Tools Menü (oben rechts) ---
     const advancedTools = document.getElementById('advancedTools');
     advancedButton.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -612,7 +612,18 @@
     // --- Touch-Events für Zeichnungs-Canvas ---
     drawingCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
     drawingCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
-    drawingCanvas.addEventListener('touchend', (e) => { e.preventDefault(); stopDraw(); });
+    drawingCanvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (selectedTool === 'emoji' && selectedEmoji) {
+        placeEmoji(e);
+        if ('ontouchstart' in window) { 
+          menu.style.display = 'none';
+          menuOpen = false;
+        }
+      } else {
+        stopDraw();
+      }
+    });
     // --- Maus-Events für Zeichnungs-Canvas ---
     drawingCanvas.addEventListener('mousedown', startDraw);
     drawingCanvas.addEventListener('mousemove', draw);
@@ -660,7 +671,8 @@
     function placeEmoji(e) {
       const pos = getMousePos(drawingCanvas, e);
       const size = parseInt(document.getElementById('sizeSlider').value);
-      context.font = `${size * 2}px Arial`;
+      // Emoji-freundliche Schriftarten
+      context.font = `${size * 2}px "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.fillText(selectedEmoji, pos.x, pos.y);
@@ -895,7 +907,7 @@
       const size = parseInt(document.getElementById('sizeSlider').value);
       previewContext.globalAlpha = 0.5;
       if (selectedTool === 'emoji' && selectedEmoji) {
-        previewContext.font = `${size * 2}px Arial`;
+        previewContext.font = `${size * 2}px "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif`;
         previewContext.textAlign = 'center';
         previewContext.textBaseline = 'middle';
         previewContext.fillText(selectedEmoji, pos.x, pos.y);
