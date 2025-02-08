@@ -45,17 +45,22 @@
       gap: 10px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       transition: transform 0.3s ease-in-out;
+      width: 180px;
     }
     .menu.hidden {
-      transform: translateX(-150%);
+      transform: translateX(-200%);
     }
     .toggle-button {
       background: white;
       border: 2px solid #ccc;
-      padding: 5px;
+      padding: 5px 10px;
       cursor: pointer;
       border-radius: 5px;
-      margin-left: 5px;
+      margin-left: -15px;
+      transition: transform 0.3s;
+    }
+    .toggle-button.hidden {
+      transform: translateX(-190%);
     }
     .emoji-container {
       position: absolute;
@@ -176,6 +181,7 @@
     // Menü ein-/ausblenden
     toggleButton.addEventListener("click", () => {
       menu.classList.toggle("hidden");
+      toggleButton.classList.toggle("hidden");
       toggleButton.textContent = menu.classList.contains("hidden") ? "➡️" : "⬅️";
     });
 
@@ -230,25 +236,18 @@
 
     function stopDraw() { isDrawing = false; }
 
-    function placeEmoji(e) {
-      if (selectedTool !== "emoji" || !selectedEmoji) return;
-      const pos = getMousePos(e);
-      ctx.font = `${brushSize * 2}px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(selectedEmoji, pos.x, pos.y);
-    }
-
-    function getMousePos(e) {
-      const rect = canvas.getBoundingClientRect();
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    }
-
     canvas.addEventListener("mousedown", startDraw);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDraw);
-    canvas.addEventListener("click", placeEmoji);
-
+    canvas.addEventListener("click", (e) => {
+      if (selectedTool === "emoji" && selectedEmoji) {
+        const pos = getMousePos(e);
+        ctx.font = `${brushSize * 2}px 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(selectedEmoji, pos.x, pos.y);
+      }
+    });
   </script>
 
 </body>
