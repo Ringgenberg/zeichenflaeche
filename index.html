@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mystisches Modernes Design mit Weißer Fläche</title>
   <style>
+    /* Basisstyles */
     body, html {
       margin: 0;
       padding: 0;
@@ -35,20 +36,13 @@
       border: 5px solid #6c5ce7;
       box-shadow: inset 0 0 20px rgba(108,92,231,0.8), 0 0 20px rgba(108,92,231,0.8);
     }
-    .left-door {
-      transform: rotateY(0deg);
-      transform-origin: left;
-    }
-    .right-door {
-      transform: rotateY(0deg);
-      transform-origin: right;
-    }
+    .left-door { transform: rotateY(0deg); transform-origin: left; }
+    .right-door { transform: rotateY(0deg); transform-origin: right; }
     @keyframes openMysticGate {
       0% { transform: rotateY(0deg); }
       50% { transform: rotateY(-45deg); }
       100% { transform: rotateY(-90deg); }
     }
-    /* Holografischer Effekt */
     .hologram {
       position: absolute;
       top: 50%;
@@ -88,7 +82,7 @@
     #backgroundCanvas { z-index: 0; }
     #drawingCanvas    { z-index: 1; }
     #previewCanvas    { z-index: 2; pointer-events: none; }
-    /* Pinsel-Button */
+    /* Pinsel-Button (links oben) */
     .brush-button {
       position: absolute;
       top: 20px;
@@ -107,7 +101,26 @@
       z-index: 10000;
     }
     .brush-button:hover { background-color: #74b9ff; }
-    /* Menü */
+    /* Advanced-Button (als eigenständiges Element, oben rechts) */
+    .advanced-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      outline: none;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
+    }
+    .advanced-button:hover { background-color: #74b9ff; }
+    /* Hauptmenü (Menu) – links neben dem Pinsel-Button */
     .menu {
       position: absolute;
       top: 90px;
@@ -153,10 +166,58 @@
       font-size: 12px;
     }
     #textOptions p { font-size: 10px; color: #888; margin: 0; }
+    /* OK-Button im Textmodus */
+    #textOkButton {
+      width: 100%;
+      padding: 10px;
+      background-color: #6c5ce7;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      margin-top: 5px;
+    }
+    #textOkButton:hover { background-color: #74b9ff; }
     /* Container für Hauptwerkzeuge */
     #mainTools { display: flex; flex-direction: column; gap: 10px; }
+    /* Größe-Slider zurückbringen (hier in mainTools) */
+    #sizeSliderContainer {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #sizeSliderContainer label { font-size: 12px; }
     /* Container für Textwerkzeug (mit Rückkehr-Pfeil) */
     #textTools { display: none; flex-direction: column; gap: 10px; }
+    /* Advanced Tools Menü (separat, oben rechts unter dem Advanced-Button) */
+    #advancedTools {
+      position: absolute;
+      top: 80px;
+      right: 20px;
+      width: 220px;
+      background-color: #ffffff;
+      border: 2px solid #6c5ce7;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+    }
+    #advancedTools button {
+      width: 100%;
+      padding: 10px;
+      background-color: #6c5ce7;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #advancedTools button:hover { background-color: #74b9ff; }
     /* Scrollbarer Emoji-Balken */
     .scroll-container {
       width: 300px;
@@ -222,16 +283,16 @@
 
   <!-- Weißer Zeichenbereich mit drei Canvas-Schichten -->
   <div class="white-drawing-page">
+    <!-- Pinsel-Button (links oben) -->
     <button id="brushButton" class="brush-button">🖌</button>
-    <!-- Hintergrundbild-Canvas -->
+    <!-- Advanced-Button (oben rechts) -->
+    <button id="advancedButton" class="advanced-button">🔧</button>
+    <!-- Canvas-Schichten -->
     <canvas id="backgroundCanvas" class="drawing-canvas"></canvas>
-    <!-- Zeichnungs-Canvas -->
     <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
-    <!-- Vorschau-Canvas -->
     <canvas id="previewCanvas" class="drawing-canvas" style="pointer-events: none;"></canvas>
-    <!-- Menü -->
+    <!-- Hauptmenü (Menu) -->
     <div id="menu" class="menu">
-      <!-- Container für Hauptwerkzeuge -->
       <div id="mainTools">
         <div class="color-scroll-container">
           <div class="color-scroll-content">
@@ -273,14 +334,13 @@
             <span class="emoji">🤓</span> <span class="emoji">🤠</span>
           </div>
         </div>
-        <input type="range" class="size-slider" min="1" max="50" value="5">
-        <!-- File-Upload für Zeichnungen -->
-        <input type="file" class="file-upload" accept="image/*">
-        <!-- File-Upload für Hintergrundbilder -->
-        <label for="bgUpload" style="font-size:12px;">Hintergrundbild hochladen:</label>
-        <input type="file" id="bgUpload" class="file-upload" accept="image/*">
+        <!-- Größe-Slider zurück (Size Slider) -->
+        <div id="sizeSliderContainer">
+          <label for="sizeSlider">Größe:</label>
+          <input type="range" id="sizeSlider" class="size-slider" min="1" max="50" value="5">
+        </div>
       </div>
-      <!-- Container für Textwerkzeug (mit Rückkehr-Pfeil) -->
+      <!-- Container für Textwerkzeug -->
       <div id="textTools">
         <button id="backButton" style="width:100%; padding:10px; background-color:#6c5ce7; color:black; border:none; cursor:pointer; font-size:14px; transition: background-color 0.3s ease; border-radius:5px;">
           ← Hauptmenü
@@ -297,8 +357,21 @@
             <option value="Georgia">Georgia</option>
           </select>
           <p>Klicke auf die Leinwand zum Platzieren</p>
+          <button id="textOkButton">OK</button>
         </div>
       </div>
+    </div>
+    <!-- Separates Advanced Tools Menü (Advanced Tools) -->
+    <div id="advancedTools" class="menu">
+      <button data-adv="squareSelect">Quadratische Auswahl</button>
+      <button data-adv="freeSelect">Freie Auswahl</button>
+      <button data-adv="moveArea">Bereich verschieben</button>
+      <button data-adv="magicWand">Zauberstab</button>
+      <button data-adv="deleteArea">Bereich löschen</button>
+      <label for="bgUpload" style="font-size:12px;">Hintergrundbild hochladen:</label>
+      <input type="file" id="bgUpload" class="file-upload" accept="image/*">
+      <label for="drawingUpload" style="font-size:12px;">Zeichnungsbild hochladen:</label>
+      <input type="file" id="drawingUpload" class="file-upload" accept="image/*">
     </div>
   </div>
 
@@ -319,7 +392,6 @@
         canvas.width = width;
         canvas.height = height;
       });
-      // Hintergrund initial weiß füllen
       bgCtx.fillStyle = "#ffffff";
       bgCtx.fillRect(0, 0, width, height);
     }
@@ -328,11 +400,13 @@
 
     // --- Weitere Elemente ---
     const brushButton = document.getElementById('brushButton');
+    const advancedButton = document.getElementById('advancedButton');
     const menu = document.getElementById('menu');
     const mainTools = document.getElementById('mainTools');
     const textTools = document.getElementById('textTools');
     const backButton = document.getElementById('backButton');
-    const bgUpload = document.getElementById('bgUpload');
+    const textOkButton = document.getElementById('textOkButton');
+    let textConfirmed = false;
 
     let menuOpen = false;
     let selectedTool = 'brush';
@@ -342,7 +416,7 @@
     let selectedEmoji = null;
     const undoStack = [];
     const redoStack = [];
-    let bgImageLoaded = false; // Gibt an, ob ein Hintergrundbild vorhanden ist
+    let bgImageLoaded = false;
 
     // --- Touch-Unterstützung & Mausposition ---
     function getMousePos(canvas, evt) {
@@ -357,13 +431,11 @@
       }
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-      return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-      };
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
     }
 
-    // --- Hintergrundbild hochladen ---
+    // --- Hintergrundbild hochladen (Advanced Tools) ---
+    const bgUpload = document.getElementById('bgUpload');
     bgUpload.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -377,6 +449,13 @@
       }
     });
 
+    // --- Advanced Tools Menü (separat, oben rechts) ---
+    const advancedTools = document.getElementById('advancedTools');
+    advancedButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      advancedTools.style.display = (advancedTools.style.display === 'none' || advancedTools.style.display === '') ? 'flex' : 'none';
+    });
+
     // --- Menü öffnen/schließen ---
     brushButton.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -385,8 +464,9 @@
     });
     menu.addEventListener('click', (e) => { e.stopPropagation(); });
     document.addEventListener('click', (e) => {
-      if (!menu.contains(e.target) && !brushButton.contains(e.target)) {
+      if (!menu.contains(e.target) && !brushButton.contains(e.target) && !advancedButton.contains(e.target)) {
         menu.style.display = 'none';
+        advancedTools.style.display = 'none';
         menuOpen = false;
       }
     });
@@ -399,7 +479,7 @@
       selectedTool = 'brush';
     });
 
-    // --- Werkzeug-Buttons ---
+    // --- Werkzeug-Buttons im Hauptmenü ---
     menu.querySelectorAll('[data-tool]').forEach(button => {
       button.addEventListener('click', () => {
         menu.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
@@ -413,8 +493,26 @@
           mainTools.style.display = 'flex';
           textTools.style.display = 'none';
           selectedTool = tool;
+          if ('ontouchstart' in window) {
+            menu.style.display = 'none';
+            menuOpen = false;
+          }
         }
       });
+    });
+
+    // --- OK-Button im Textmodus ---
+    textOkButton.addEventListener('click', () => {
+      const textVal = document.getElementById('textInput').value.trim();
+      if (textVal !== "") {
+        textConfirmed = true;
+        mainTools.style.display = 'flex';
+        textTools.style.display = 'none';
+        menu.style.display = 'none';
+        menuOpen = false;
+      } else {
+        alert("Bitte Text eingeben.");
+      }
     });
 
     // --- Farbauswahl ---
@@ -433,43 +531,95 @@
         emoji.classList.add('selected');
         selectedEmoji = emoji.textContent;
         selectedTool = 'emoji';
-        mainTools.style.display = 'flex';
-        textTools.style.display = 'none';
+        if ('ontouchstart' in window) {
+          menu.style.display = 'none';
+          menuOpen = false;
+        }
       });
+    });
+
+    // --- Erweiterte Funktionen (Advanced Tools) ---
+    document.querySelectorAll('[data-adv]').forEach(button => {
+      button.addEventListener('click', () => {
+        const adv = button.dataset.adv;
+        if (adv === 'squareSelect') {
+          selectedTool = 'squareSelect';
+          alert("Quadratische Auswahl aktiviert. Ziehe, um den Bereich auszuwählen.");
+          startSelection();
+        } else if (adv === 'freeSelect') {
+          selectedTool = 'freeSelect';
+          alert("Freie Auswahl aktiviert. (Funktion noch nicht vollständig implementiert)");
+        } else if (adv === 'moveArea') {
+          if (selectionRect) {
+            selectedTool = 'moveArea';
+            alert("Bereich verschieben aktiviert. Tippe und ziehe innerhalb des ausgewählten Bereichs.");
+            startMoveSelection();
+          } else {
+            alert("Bitte zuerst einen Bereich auswählen.");
+          }
+        } else if (adv === 'magicWand') {
+          selectedTool = 'magicWand';
+          alert("Zauberstabfunktion aktiviert. (Stub – Funktion nicht vollständig implementiert)");
+        } else if (adv === 'deleteArea') {
+          if (selectionRect) {
+            context.clearRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+            selectionRect = null;
+            alert("Ausgewählter Bereich wurde gelöscht.");
+          } else {
+            alert("Kein Bereich ausgewählt.");
+          }
+        }
+        if ('ontouchstart' in window) {
+          advancedTools.style.display = 'none';
+        }
+      });
+    });
+
+    // --- File-Upload für Zeichnungsbilder (Advanced Tools) ---
+    const drawingUpload = document.getElementById('drawingUpload');
+    drawingUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          context.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+          saveState();
+        };
+      }
     });
 
     // --- Gemeinsamer Canvas-Klick-Handler ---
     drawingCanvas.addEventListener('click', (e) => {
       if (selectedTool === 'emoji' && selectedEmoji) {
         placeEmoji(e);
+        if ('ontouchstart' in window) { menu.style.display = 'none'; menuOpen = false; }
       } else if (selectedTool === 'text') {
-        placeText(e);
+        if (textConfirmed) {
+          placeText(e);
+        } else {
+          alert("Bitte zuerst OK drücken, wenn du den Text fertig geschrieben hast.");
+        }
       } else if (selectedTool === 'bucket') {
         bucketFill(e);
+      } else if (selectedTool === 'squareSelect') {
+        startSelection();
+      } else if (selectedTool === 'moveArea') {
+        startMoveSelection();
       }
     });
 
     // --- Touch-Events für Zeichnungs-Canvas ---
-    drawingCanvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      startDraw(e);
-    });
-    drawingCanvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      draw(e);
-    });
-    drawingCanvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      stopDraw();
-    });
-
+    drawingCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+    drawingCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    drawingCanvas.addEventListener('touchend', (e) => { e.preventDefault(); stopDraw(); });
     // --- Maus-Events für Zeichnungs-Canvas ---
     drawingCanvas.addEventListener('mousedown', startDraw);
     drawingCanvas.addEventListener('mousemove', draw);
     drawingCanvas.addEventListener('mouseup', stopDraw);
 
     function startDraw(e) {
-      if (selectedTool === 'emoji' || selectedTool === 'text' || selectedTool === 'bucket') return;
+      if (['emoji','text','bucket','squareSelect','moveArea'].includes(selectedTool)) return;
       isDrawing = true;
       const pos = getMousePos(drawingCanvas, e);
       [lastX, lastY] = [pos.x, pos.y];
@@ -477,14 +627,11 @@
     }
 
     function draw(e) {
-      if (!isDrawing || selectedTool === 'emoji' || selectedTool === 'text' || selectedTool === 'bucket') return;
+      if (!isDrawing || ['emoji','text','bucket','squareSelect','moveArea'].includes(selectedTool)) return;
       const pos = getMousePos(drawingCanvas, e);
-      // Beim Radierer und vorhandenem Hintergrundbild wird der bgCtx genutzt
       let ctxToUse = context;
-      if (selectedTool === 'eraser' && bgImageLoaded) {
-        ctxToUse = bgCtx;
-      }
-      ctxToUse.lineWidth = document.querySelector('.size-slider').value;
+      if (selectedTool === 'eraser' && bgImageLoaded) { ctxToUse = bgCtx; }
+      ctxToUse.lineWidth = document.getElementById('sizeSlider').value;
       ctxToUse.lineCap = 'round';
       if (selectedTool === 'brush') {
         ctxToUse.globalAlpha = 1;
@@ -505,18 +652,14 @@
       ctxToUse.lineTo(pos.x, pos.y);
       ctxToUse.stroke();
       [lastX, lastY] = [pos.x, pos.y];
-      if(selectedTool === 'eraser'){
-        ctxToUse.globalCompositeOperation = 'source-over';
-      }
+      if (selectedTool === 'eraser') { ctxToUse.globalCompositeOperation = 'source-over'; }
     }
 
-    function stopDraw() {
-      isDrawing = false;
-    }
+    function stopDraw() { isDrawing = false; }
 
     function placeEmoji(e) {
       const pos = getMousePos(drawingCanvas, e);
-      const size = parseInt(document.querySelector('.size-slider').value);
+      const size = parseInt(document.getElementById('sizeSlider').value);
       context.font = `${size * 2}px Arial`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
@@ -526,7 +669,7 @@
 
     function placeText(e) {
       const pos = getMousePos(drawingCanvas, e);
-      const size = parseInt(document.querySelector('.size-slider').value);
+      const size = parseInt(document.getElementById('sizeSlider').value);
       const text = document.getElementById('textInput').value;
       const fontSelect = document.getElementById('fontSelect').value;
       if (!text) return;
@@ -537,7 +680,7 @@
       saveState();
     }
 
-    // --- Bucket-Funktion (Farbeimer) auf dem Hintergrund-Canvas ---
+    // --- Bucket-Funktion auf dem Hintergrund-Canvas ---
     function bucketFill(e) {
       const pos = getMousePos(backgroundCanvas, e);
       const x = Math.floor(pos.x);
@@ -545,7 +688,6 @@
       floodFill(bgCtx, x, y, selectedColor);
     }
 
-    // --- Flood-Fill-Algorithmus ---
     function floodFill(ctx, startX, startY, fillColor) {
       const width = ctx.canvas.width;
       const height = ctx.canvas.height;
@@ -655,11 +797,102 @@
       selectedTool = 'bucket';
     });
 
+    // --- Erweiterte Auswahlfunktionen (Advanced Tools) ---
+    let selectionRect = null;
+    let selecting = false;
+    let selectionStart = null;
+    let movingSelection = false;
+    let moveOffset = { x: 0, y: 0 };
+    let selectionImageData = null;
+    function startSelection() {
+      selecting = true;
+      selectionStart = null;
+      selectionRect = null;
+      previewCanvas.addEventListener('mousedown', selectionMouseDown);
+      previewCanvas.addEventListener('touchstart', selectionMouseDown);
+    }
+    function selectionMouseDown(e) {
+      selectionStart = getMousePos(previewCanvas, e);
+      previewCanvas.addEventListener('mousemove', updateSelectionPreview);
+      previewCanvas.addEventListener('touchmove', updateSelectionPreview);
+      previewCanvas.addEventListener('mouseup', endSelection);
+      previewCanvas.addEventListener('touchend', endSelection);
+    }
+    function updateSelectionPreview(e) {
+      const pos = getMousePos(previewCanvas, e);
+      const x = Math.min(selectionStart.x, pos.x);
+      const y = Math.min(selectionStart.y, pos.y);
+      const width = Math.abs(pos.x - selectionStart.x);
+      const height = Math.abs(pos.y - selectionStart.y);
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewContext.strokeStyle = 'red';
+      previewContext.lineWidth = 2;
+      previewContext.strokeRect(x, y, width, height);
+    }
+    function endSelection(e) {
+      const pos = getMousePos(previewCanvas, e);
+      const x = Math.min(selectionStart.x, pos.x);
+      const y = Math.min(selectionStart.y, pos.y);
+      const width = Math.abs(pos.x - selectionStart.x);
+      const height = Math.abs(pos.y - selectionStart.y);
+      selectionRect = { x, y, width, height };
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewCanvas.removeEventListener('mousemove', updateSelectionPreview);
+      previewCanvas.removeEventListener('touchmove', updateSelectionPreview);
+      previewCanvas.removeEventListener('mouseup', endSelection);
+      previewCanvas.removeEventListener('touchend', endSelection);
+      alert("Bereich ausgewählt.");
+    }
+    function startMoveSelection() {
+      if (!selectionRect) {
+        alert("Kein Bereich ausgewählt.");
+        return;
+      }
+      const pos = getMousePos(drawingCanvas, event);
+      if (pos.x >= selectionRect.x && pos.x <= selectionRect.x + selectionRect.width &&
+          pos.y >= selectionRect.y && pos.y <= selectionRect.y + selectionRect.height) {
+        movingSelection = true;
+        moveOffset.x = pos.x - selectionRect.x;
+        moveOffset.y = pos.y - selectionRect.y;
+        selectionImageData = context.getImageData(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+        drawingCanvas.addEventListener('mousemove', moveSelection);
+        drawingCanvas.addEventListener('mouseup', endMoveSelection);
+      } else {
+        alert("Bitte innerhalb des ausgewählten Bereichs klicken.");
+      }
+    }
+    function moveSelection(e) {
+      if (!movingSelection) return;
+      const pos = getMousePos(drawingCanvas, e);
+      const newX = pos.x - moveOffset.x;
+      const newY = pos.y - moveOffset.y;
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewContext.putImageData(selectionImageData, newX, newY);
+    }
+    function endMoveSelection(e) {
+      if (!movingSelection) return;
+      const pos = getMousePos(drawingCanvas, e);
+      const newX = pos.x - moveOffset.x;
+      const newY = pos.y - moveOffset.y;
+      context.clearRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+      context.putImageData(selectionImageData, newX, newY);
+      selectionRect = { x: newX, y: newY, width: selectionRect.width, height: selectionRect.height };
+      movingSelection = false;
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      drawingCanvas.removeEventListener('mousemove', moveSelection);
+      drawingCanvas.removeEventListener('mouseup', endMoveSelection);
+      alert("Bereich verschoben.");
+    }
+    // Zauberstab (Stub)
+    function activateMagicWand() {
+      alert("Zauberstabfunktion ist noch nicht implementiert.");
+    }
+
     // --- Preview: Touch- & Maus-Events für die Vorschau ---
     function drawTransparentPreview(e) {
       previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
       const pos = getMousePos(previewCanvas, e);
-      const size = parseInt(document.querySelector('.size-slider').value);
+      const size = parseInt(document.getElementById('sizeSlider').value);
       previewContext.globalAlpha = 0.5;
       if (selectedTool === 'emoji' && selectedEmoji) {
         previewContext.font = `${size * 2}px Arial`;
@@ -684,10 +917,7 @@
       previewContext.globalAlpha = 1;
     }
     previewCanvas.addEventListener('mousemove', drawTransparentPreview);
-    previewCanvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      drawTransparentPreview(e);
-    });
+    previewCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawTransparentPreview(e); });
   </script>
 </body>
 </html>
