@@ -2,27 +2,23 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-  <title>Zeichnen mit Emojis & mehreren Blättern</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>Zeichnen mit Emojis & Zoomen</title>
   <style>
     body, html {
       margin: 0;
       padding: 0;
       overflow: hidden;
       height: 100%;
-      touch-action: none;
       font-family: Arial, sans-serif;
-    }
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: white;
+      touch-action: none;
     }
     .canvas-container {
       position: relative;
       width: 100%;
       height: 100%;
+      overflow: hidden;
+      touch-action: none;
     }
     canvas {
       position: absolute;
@@ -30,7 +26,6 @@
       left: 0;
       width: 100%;
       height: 100%;
-      touch-action: none;
       background-color: white;
     }
     .menu-container {
@@ -50,11 +45,7 @@
       flex-direction: column;
       gap: 8px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      transition: transform 0.3s ease-in-out;
       width: 200px;
-    }
-    .menu.hidden {
-      transform: translateX(-200%);
     }
     .toggle-button {
       position: absolute;
@@ -66,10 +57,6 @@
       padding: 5px;
       cursor: pointer;
       border-radius: 5px;
-      transition: left 0.3s;
-    }
-    .toggle-button.hidden {
-      left: 0;
     }
     .color-container {
       display: flex;
@@ -85,25 +72,6 @@
     .color-box.selected {
       border: 3px solid black;
     }
-    input[type="range"] {
-      width: 100%;
-    }
-    .page-buttons {
-      display: flex;
-      gap: 5px;
-    }
-    .page-buttons button {
-      flex: 1;
-      padding: 5px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      border-radius: 3px;
-      background: lightgray;
-    }
-    .page-buttons button.active {
-      background: #6c5ce7;
-      color: white;
-    }
     .emoji-container {
       position: absolute;
       bottom: 20px;
@@ -115,51 +83,28 @@
       display: flex;
       overflow-x: auto;
       white-space: nowrap;
-      user-select: none;
-      z-index: 10;
       width: auto;
       max-width: 300px;
-      scrollbar-width: thin;
-    }
-    .emoji-container::-webkit-scrollbar {
-      height: 8px;
-    }
-    .emoji-container::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 4px;
     }
     .emoji {
       font-size: 24px;
       cursor: pointer;
       padding: 5px;
-      transition: transform 0.2s ease-in-out;
-    }
-    .emoji:hover {
-      transform: scale(1.3);
     }
   </style>
 </head>
 <body>
 
   <div class="canvas-container">
-    <!-- 5 Zeichenflächen -->
-    <canvas id="canvas1" class="drawingCanvas"></canvas>
-    <canvas id="canvas2" class="drawingCanvas" style="display: none;"></canvas>
-    <canvas id="canvas3" class="drawingCanvas" style="display: none;"></canvas>
-    <canvas id="canvas4" class="drawingCanvas" style="display: none;"></canvas>
-    <canvas id="canvas5" class="drawingCanvas" style="display: none;"></canvas>
+    <canvas id="drawingCanvas"></canvas>
   </div>
 
-  <!-- Menü mit Pfeil-Button -->
   <div class="menu-container">
     <div class="menu" id="menu">
       <button id="brushTool">🖌 Pinsel</button>
-      <button id="pencilTool">✏️ Bleistift</button>
       <button id="eraserTool">🧽 Radiergummi</button>
-      <button id="undoButton">↩️ Rückgängig</button>
       <button id="clearButton" style="font-size: 12px;">🗑️</button>
-
-      <!-- Farbauswahl -->
+      
       <div class="color-container">
         <div class="color-box" style="background-color: black;"></div>
         <div class="color-box" style="background-color: red;"></div>
@@ -168,63 +113,125 @@
         <div class="color-box" style="background-color: yellow;"></div>
       </div>
 
-      <!-- Größe anpassen -->
       <label>Größe:</label>
       <input type="range" id="sizeSlider" min="5" max="50" value="10">
-
-      <!-- Zeichenflächen wechseln -->
-      <div class="page-buttons">
-        <button data-page="1" class="active">1</button>
-        <button data-page="2">2</button>
-        <button data-page="3">3</button>
-        <button data-page="4">4</button>
-        <button data-page="5">5</button>
-      </div>
     </div>
 
-    <!-- Menü-Pfeil -->
     <button class="toggle-button" id="toggleMenu">⬅️</button>
   </div>
 
-  <!-- Emoji-Scrollbereich -->
-  <div class="emoji-container" id="emojiContainer">
+  <div class="emoji-container">
     <span class="emoji">😀</span>
     <span class="emoji">😃</span>
     <span class="emoji">😄</span>
     <span class="emoji">😁</span>
-    <span class="emoji">😆</span>
-    <span class="emoji">😅</span>
     <span class="emoji">😂</span>
-    <span class="emoji">🤣</span>
-    <span class="emoji">😊</span>
-    <span class="emoji">😇</span>
-    <span class="emoji">😉</span>
-    <span class="emoji">😍</span>
-    <span class="emoji">🥰</span>
-    <span class="emoji">😘</span>
     <span class="emoji">😎</span>
     <span class="emoji">🤩</span>
     <span class="emoji">🥳</span>
-    <span class="emoji">🤗</span>
   </div>
 
   <script>
-    const ctx = document.getElementById("canvas1").getContext("2d");
+    const canvas = document.getElementById("drawingCanvas");
+    const ctx = canvas.getContext("2d");
 
-    document.getElementById("clearButton").addEventListener("click", () => {
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    });
+    let drawing = false;
+    let selectedColor = "black";
+    let selectedSize = 10;
+    let selectedTool = "brush";
+    let scale = 1;
+    let lastDist = 0;
 
-    document.querySelectorAll(".emoji").forEach(emoji => {
-      emoji.addEventListener("click", (e) => {
-        ctx.font = "40px Arial";
-        ctx.fillText(emoji.textContent, Math.random() * ctx.canvas.width, Math.random() * ctx.canvas.height);
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    document.querySelectorAll(".color-box").forEach(box => {
+      box.addEventListener("click", () => {
+        document.querySelector(".color-box.selected")?.classList.remove("selected");
+        box.classList.add("selected");
+        selectedColor = getComputedStyle(box).backgroundColor;
       });
     });
 
-    document.getElementById("toggleMenu").addEventListener("click", () => {
-      document.getElementById("menu").classList.toggle("hidden");
-      document.getElementById("emojiContainer").classList.toggle("hidden");
+    document.getElementById("sizeSlider").addEventListener("input", (e) => {
+      selectedSize = e.target.value;
+    });
+
+    document.getElementById("brushTool").addEventListener("click", () => {
+      selectedTool = "brush";
+    });
+
+    document.getElementById("eraserTool").addEventListener("click", () => {
+      selectedTool = "eraser";
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    function getMousePos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+      };
+    }
+
+    function startDraw(evt) {
+      drawing = true;
+      const pos = getMousePos(evt);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(evt) {
+      if (!drawing) return;
+      const pos = getMousePos(evt);
+      ctx.lineWidth = selectedSize;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = selectedTool === "eraser" ? "white" : selectedColor;
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function stopDraw() {
+      drawing = false;
+      ctx.closePath();
+    }
+
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", stopDraw);
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) return;
+      startDraw(e.touches[0]);
+    });
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2) {
+        let dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (lastDist) {
+          scale *= dist / lastDist;
+          canvas.style.transform = `scale(${scale})`;
+        }
+        lastDist = dist;
+        return;
+      }
+      draw(e.touches[0]);
+    });
+    canvas.addEventListener("touchend", stopDraw);
+
+    document.querySelectorAll(".emoji").forEach(emoji => {
+      emoji.addEventListener("click", () => {
+        ctx.font = "40px Arial";
+        ctx.fillText(emoji.textContent, Math.random() * canvas.width, Math.random() * canvas.height);
+      });
     });
   </script>
 
